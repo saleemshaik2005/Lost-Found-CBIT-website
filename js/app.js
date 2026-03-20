@@ -1,3 +1,6 @@
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 /* ============================= */
 /* 🔹 DOM ELEMENTS */
 /* ============================= */
@@ -7,28 +10,37 @@ const categoryFilter = document.getElementById("categoryFilter");
 const typeFilter = document.getElementById("typeFilter");
 const container = document.getElementById("itemsContainer");
 
-
 /* ============================= */
-/* 🔹 LOAD & PREPARE DATA */
+/* 🔹 GLOBAL DATA */
 /* ============================= */
 
-// Load items from localStorage
-let items = JSON.parse(localStorage.getItem("items")) || [];
-
+let items = []; // ✅ GLOBAL (important)
 const now = Date.now();
 
-// Remove expired items (older than 14 days)
-items = items.filter(item => {
-  const days = (now - item.createdAt) / (1000 * 60 * 60 * 24);
-  return days <= 14;
-});
+/* ============================= */
+/* 🔹 LOAD ITEMS FROM FIREBASE */
+/* ============================= */
 
-// Save cleaned data back
-localStorage.setItem("items", JSON.stringify(items));
+async function loadItems() {
+  const querySnapshot = await getDocs(collection(db, "items"));
 
-// Sort items (latest first)
-items.sort((a, b) => b.createdAt - a.createdAt);
+  items = []; // reset
 
+  querySnapshot.forEach((doc) => {
+    items.push(doc.data());
+  });
+
+  // Remove expired (14 days)
+  items = items.filter(item => {
+    const days = (now - item.createdAt) / (1000 * 60 * 60 * 24);
+    return days <= 14;
+  });
+
+  // Sort latest first
+  items.sort((a, b) => b.createdAt - a.createdAt);
+
+  displayItems(items);
+}
 
 /* ============================= */
 /* 🔹 DISPLAY ITEMS */
@@ -37,7 +49,6 @@ items.sort((a, b) => b.createdAt - a.createdAt);
 function displayItems(data) {
   container.innerHTML = "";
 
-  // Empty state
   if (data.length === 0) {
     container.innerHTML = `
       <div class="empty">
@@ -48,7 +59,6 @@ function displayItems(data) {
     return;
   }
 
-  // Render items
   data.forEach(item => {
 
     const isNew = (now - item.createdAt) < (24 * 60 * 60 * 1000);
@@ -58,22 +68,19 @@ function displayItems(data) {
       : "https://via.placeholder.com/300";
 
     const card = `
-      <div class="card" onclick="openDetails(${item.id})">
+  <div class="card" data-id="${item.id}">
         
         <img src="${image}" alt="${item.title}">
 
         <div class="card-content">
 
-          <!-- Type -->
           <span class="tag ${item.type.toLowerCase()}">${item.type}</span>
 
-          <!-- Status -->
           ${item.status === "Recovered"
             ? '<span class="tag recovered">Recovered</span>'
             : ''
           }
 
-          <!-- New badge -->
           ${isNew
             ? '<span class="tag" style="background: orange; color: white;">NEW</span>'
             : ''
@@ -89,9 +96,16 @@ function displayItems(data) {
     `;
 
     container.innerHTML += card;
+    const cards = document.querySelectorAll(".card");
+
+cards.forEach(card => {
+  card.addEventListener("click", () => {
+    const id = card.getAttribute("data-id");
+    openDetails(id);
+  });
+});
   });
 }
-
 
 /* ============================= */
 /* 🔹 FILTER LOGIC */
@@ -104,7 +118,6 @@ function applyFilters() {
   const categoryValue = categoryFilter.value;
   const typeValue = typeFilter.value;
 
-  // Search filter
   if (searchValue) {
     filtered = filtered.filter(item =>
       item.title.toLowerCase().includes(searchValue) ||
@@ -113,14 +126,12 @@ function applyFilters() {
     );
   }
 
-  // Category filter
   if (categoryValue) {
     filtered = filtered.filter(item =>
       item.category === categoryValue
     );
   }
 
-  // Type filter
   if (typeValue) {
     filtered = filtered.filter(item =>
       item.type === typeValue
@@ -130,27 +141,23 @@ function applyFilters() {
   displayItems(filtered);
 }
 
-
 /* ============================= */
-/* 🔹 EVENT LISTENERS */
+/* 🔹 EVENTS */
 /* ============================= */
 
 searchInput.addEventListener("input", applyFilters);
 categoryFilter.addEventListener("change", applyFilters);
 typeFilter.addEventListener("change", applyFilters);
 
-
 /* ============================= */
 /* 🔹 ACTIONS */
 /* ============================= */
 
-// Open details page
 function openDetails(id) {
   localStorage.setItem("selectedItemId", id);
   window.location.href = "details.html";
 }
 
-// Reset filters
 function resetFilters() {
   searchInput.value = "";
   categoryFilter.value = "";
@@ -158,7 +165,6 @@ function resetFilters() {
 
   displayItems(items);
 }
-
 
 /* ============================= */
 /* 🔹 TIME FORMAT */
@@ -183,10 +189,9 @@ function getTimeAgo(time) {
   return "Just now";
 }
 
-
 /* ============================= */
 /* 🔹 INITIAL LOAD */
 /* ============================= */
 
-displayItems(items);
-applyFilters();
+loadItems();
+window.resetFilters = resetFilters;

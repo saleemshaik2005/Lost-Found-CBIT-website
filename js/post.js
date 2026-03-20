@@ -1,3 +1,6 @@
+import { db } from "./firebase.js";
+import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 /* ============================= */
 /* 🔹 DOM ELEMENTS */
 /* ============================= */
@@ -45,7 +48,6 @@ imageInput.addEventListener("change", () => {
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-
   const type = document.getElementById("type").value;
 
   // Validate image requirement
@@ -70,18 +72,14 @@ form.addEventListener("submit", (e) => {
     createdAt: Date.now()
   };
 
-  // Load existing items
-  let items = JSON.parse(localStorage.getItem("items")) || [];
+  addDoc(collection(db, "items"), item)
+  .then(() => {
+    alert("Item posted successfully!");
+    window.location.href = "index.html";
+  })
+  .catch(error => {
+    console.error(error);
+    alert("Error posting item");
+  });
 
-  // Add new item
-  items.push(item);
-
-  // Save back to storage
-  localStorage.setItem("items", JSON.stringify(items));
-
-  // Notify user
-  alert("Item posted successfully!");
-
-  // Redirect to homepage
-  window.location.href = "index.html";
 });

@@ -1,32 +1,52 @@
+import { db } from "./firebase.js";
+import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 /* ============================= */
-/* 🔹 DOM & DATA */
+/* 🔹 DOM */
 /* ============================= */
 
 const container = document.getElementById("detailsContainer");
-
-const id = localStorage.getItem("selectedItemId");
-let items = JSON.parse(localStorage.getItem("items")) || [];
-
-// Find selected item
-const item = items.find(i => i.id == id);
-
+const selectedId = localStorage.getItem("selectedItemId");
 
 /* ============================= */
-/* 🔹 RENDER ITEM */
+/* 🔹 LOAD ITEM FROM FIREBASE */
 /* ============================= */
 
-if (!item) {
-  container.innerHTML = "<p>Item not found.</p>";
-} else {
+async function loadItem() {
+  const querySnapshot = await getDocs(collection(db, "items"));
 
-  // Prepare images
+  let foundItem = null;
+  let docId = null;
+
+  querySnapshot.forEach((document) => {
+    const data = document.data();
+
+    if (data.id == selectedId) {
+      foundItem = data;
+      docId = document.id; // 🔥 important for update
+    }
+  });
+
+  if (!foundItem) {
+    container.innerHTML = "<p>Item not found.</p>";
+    return;
+  }
+
+  renderItem(foundItem, docId);
+}
+
+/* ============================= */
+/* 🔹 RENDER */
+/* ============================= */
+
+function renderItem(item, docId) {
+
   const imagesHTML = (item.images && item.images.length > 0)
     ? item.images.map(img =>
-        `<img src="${img}" alt="Item Image" onclick="openImage('${img}')">`
+        `<img src="${img}" onclick="openImage('${img}')">`
       ).join("")
-    : `<img src="https://via.placeholder.com/300" alt="No Image">`;
+    : `<img src="https://via.placeholder.com/300">`;
 
-  // Render UI
   container.innerHTML = `
     <div class="details-box">
 
@@ -43,16 +63,12 @@ if (!item) {
       <p><strong>Date & Time:</strong> ${new Date(item.date).toLocaleString()}</p>
       <p><strong>Posted By:</strong> ${item.username}</p>
 
-      <!-- Contact -->
       <button class="reveal-btn" onclick="revealContact()">Reveal Contact</button>
-      <p id="contactInfo" style="display: none;">
-        ${item.contact}
-      </p>
+      <p id="contactInfo" style="display:none;">${item.contact}</p>
 
-      <!-- Status Action -->
       ${
         item.status === "Open"
-          ? `<button class="recover-btn" onclick="markRecovered()">Mark as Recovered</button>`
+          ? `<button class="recover-btn" onclick="markRecovered('${docId}')">Mark as Recovered</button>`
           : `<p style="color: green;"><strong>Item Recovered</strong></p>`
       }
 
@@ -60,37 +76,32 @@ if (!item) {
   `;
 }
 
-
 /* ============================= */
 /* 🔹 ACTIONS */
 /* ============================= */
 
-// Reveal contact
 function revealContact() {
   document.getElementById("contactInfo").style.display = "block";
 }
 
-
-// Mark item as recovered
-function markRecovered() {
+// 🔥 Update in Firebase
+async function markRecovered(docId) {
   if (!confirm("Mark this item as recovered?")) return;
 
-  const index = items.findIndex(i => i.id == id);
-  items[index].status = "Recovered";
+  const ref = doc(db, "items", docId);
 
-  localStorage.setItem("items", JSON.stringify(items));
+  await updateDoc(ref, {
+    status: "Recovered"
+  });
 
   alert("Item marked as recovered!");
-
   location.reload();
 }
-
 
 /* ============================= */
 /* 🔹 IMAGE MODAL */
 /* ============================= */
 
-// Open full-screen image
 function openImage(src) {
   const modal = document.getElementById("imageModal");
   const modalImg = document.getElementById("modalImg");
@@ -99,7 +110,16 @@ function openImage(src) {
   modalImg.src = src;
 }
 
-// Close image modal
 function closeImage() {
   document.getElementById("imageModal").style.display = "none";
 }
+
+/* ============================= */
+/* 🔹 INIT */
+/* ============================= */
+
+loadItem();
+window.revealContact = revealContact;
+window.markRecovered = markRecovered;
+window.openImage = openImage;
+window.closeImage = closeImage;
