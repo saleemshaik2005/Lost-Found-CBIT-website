@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Post Item - CBIT Lost & Found</title>
+
+  <!-- Styles & Meta -->
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header class="main-header">
+
+    <div class="logo-section">
+      <img src="images/logo.png" alt="CBIT Logo">
+    </div>
+
+    <div class="title-section">
+      <h1>Post Item</h1>
+      <p>CBIT Lost & Found</p>
+    </div>
+
+    <a href="index.html" class="back-btn">← Home</a>
+
+  </header>
+
+
+  <!-- ================= FORM ================= -->
+  <section class="form-section">
+
+    <form id="postForm">
+
+      <!-- Item Name -->
+      <input 
+        type="text" 
+        id="title" 
+        placeholder="Item Name" 
+        required
+      >
+
+      <!-- Category -->
+      <select id="category">
+        <option value="">All / Not specified</option>
+        <option>Electronics</option>
+        <option>Documents</option>
+        <option>Accessories</option>
+        <option>Bags</option>
+        <option>Other</option>
+      </select>
+
+      <!-- Type -->
+      <select id="type" required>
+        <option value="">Type</option>
+        <option value="Lost">Lost</option>
+        <option value="Found">Found</option>
+      </select>
+
+      <!-- Description -->
+      <textarea 
+        id="description" 
+        placeholder="Description"
+        required
+      ></textarea>
+
+      <!-- Location -->
+      <input 
+        type="text" 
+        id="location" 
+        placeholder="Location (e.g., Library, Block A)" 
+        required
+      >
+
+      <!-- Date & Time -->
+      <input 
+        type="datetime-local" 
+        id="date" 
+        required
+      >
+
+      <!-- Image Upload -->
+      <input 
+        type="file" 
+        id="images" 
+        multiple 
+        accept="image/*"
+      >
+
+      <p style="font-size: 12px; color: gray;">
+        If FOUND item → at least one image is required <br>
+        If LOST item → image is optional
+      </p>
+
+      <!-- Image Preview -->
+      <div id="imagePreview" class="preview-container"></div>
+
+      <!-- User Info -->
+      <input 
+        type="text" 
+        id="username" 
+        placeholder="Your Name (optional)"
+      >
+
+      <input 
+        type="text" 
+        id="contact" 
+        placeholder="Contact (Phone / Email / Insta / Telegram)"
+      >
+
+      <!-- Submit -->
+      <button type="submit">Post Item</button>
+
+    </form>
+
+  </section>
+
+
+  <!-- ================= SCRIPTS ================= -->
+  <script src="js/post.js"></script>
+
+</body>
+</html>
