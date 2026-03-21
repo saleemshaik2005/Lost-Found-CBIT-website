@@ -1,3 +1,40 @@
+import { auth, provider } from "./firebase.js";
+import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const authSection = document.getElementById("authSection");
+const userProfile = document.getElementById("userProfile");
+const userAvatar = document.getElementById("userAvatar");
+
+// Login Function
+loginBtn.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("Login failed:", error);
+  }
+});
+
+// Logout Function
+logoutBtn.addEventListener("click", () => signOut(auth));
+
+// Listen for Auth State Changes
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // User is signed in
+    loginBtn.style.display = "none";
+    userProfile.style.display = "flex";
+    userAvatar.src = user.photoURL;
+    localStorage.setItem("userUID", user.uid); // Store UID for filtering "My Posts" later
+  } else {
+    // User is signed out
+    loginBtn.style.display = "block";
+    userProfile.style.display = "none";
+    localStorage.removeItem("userUID");
+  }
+});
+
 import { db } from "./firebase.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
