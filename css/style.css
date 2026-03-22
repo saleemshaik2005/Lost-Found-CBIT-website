@@ -13,7 +13,6 @@ html {
   scroll-behavior: smooth;
 }
 
-
 /* ============================= */
 /* 🔷 HEADER */
 /* ============================= */
@@ -22,18 +21,33 @@ html {
   background: #2e5e2e;
   color: white;
   padding: 10px 20px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
+/* 🔥 UPDATED LOGO GLASS TAB */
+.logo-section {
+  background: rgba(255, 255, 255, 0.12); /* Glassy transparency */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 6px 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25); /* Thin glass border */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  pointer-events: none; /* Looks like a button, behaves like a tab */
+}
+
 .logo-section img {
-  height: 60px;
+  height: 50px;
+  filter: drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.2));
 }
 
 .title-section {
@@ -53,6 +67,16 @@ html {
   opacity: 0.8;
 }
 
+/* 🔥 AVATAR BORDER (Added) */
+#userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid white; /* Prevents merging into header */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  object-fit: cover;
+}
+
 .post-btn {
   background: #b22222;
   color: white;
@@ -69,7 +93,6 @@ html {
   background: #244a24;
 }
 
-
 /* ============================= */
 /* 🟡 ACCENT */
 /* ============================= */
@@ -78,7 +101,6 @@ html {
   height: 4px;
   background: #c9a227;
 }
-
 
 /* ============================= */
 /* 🖼 HERO */
@@ -93,12 +115,10 @@ html {
 .hero-overlay {
   background: rgba(0, 0, 0, 0.55);
   height: 100%;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
   color: white;
   text-align: center;
 }
@@ -113,7 +133,6 @@ html {
   margin-top: 10px;
 }
 
-
 /* ============================= */
 /* 🔍 SEARCH */
 /* ============================= */
@@ -122,40 +141,46 @@ html {
   margin-top: -50px;
   background: white;
   padding: 15px;
-  border-radius: 10px;
+  border-radius: 50px; /* Kept round from previous update */
   width: 85%;
   margin-left: auto;
   margin-right: auto;
-
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
   position: relative;
   z-index: 2;
-
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-
-  justify-content: center;   /* ✅ center horizontally */
-  align-items: center;       /* ✅ align nicely */
+  justify-content: center;
+  align-items: center;
 }
 
 .search-section input {
   width: 250px;
+  border: 1px solid #eee;
+  padding: 10px;
+  border-radius: 25px;
 }
 
 .search-section select {
   width: 150px;
-}
-.search-section button {
-  padding: 8px;
-  border-radius: 5px;
+  padding: 10px;
+  border-radius: 25px;
   border: 1px solid #ccc;
-  cursor: pointer;
 }
 
+.search-section button {
+  padding: 10px 20px;
+  border-radius: 25px;
+  border: none;
+  background: #2e5e2e;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
 
 /* ============================= */
-/* 🧾 ITEMS */
+/* 🧾 ITEMS & CARDS */
 /* ============================= */
 
 .items-container {
@@ -166,17 +191,11 @@ html {
   margin-top: 20px;
 }
 
-
-/* ============================= */
-/* 🧱 CARD */
-/* ============================= */
-
 .card {
   background: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
@@ -196,7 +215,6 @@ html {
   padding: 10px;
 }
 
-
 /* ============================= */
 /* 🏷 TAGS */
 /* ============================= */
@@ -209,20 +227,9 @@ html {
   margin-right: 5px;
 }
 
-.lost {
-  background: #b22222;
-  color: white;
-}
-
-.found {
-  background: #2e5e2e;
-  color: white;
-}
-.recovered {
-  background: #4a4949;
-  color: white;
-}
-
+.lost { background: #b22222; color: white; }
+.found { background: #2e5e2e; color: white; }
+.recovered { background: #4a4949; color: white; }
 
 /* ============================= */
 /* 📄 DETAILS */
@@ -254,32 +261,16 @@ html {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.reveal-btn {
-  background: #ff9800;
-  color: white;
+.reveal-btn, .recover-btn {
   padding: 10px;
   border-radius: 5px;
   border: none;
   cursor: pointer;
-}
-
-.recover-btn {
-  background: #2e5e2e;
   color: white;
-  padding: 10px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
 }
 
-.reveal-btn:hover {
-  background: #e68900;
-}
-
-.recover-btn:hover {
-  background: #244a24;
-}
-
+.reveal-btn { background: #ff9800; }
+.recover-btn { background: #2e5e2e; }
 
 /* ============================= */
 /* 📝 FORM */
@@ -297,9 +288,7 @@ form {
   gap: 10px;
 }
 
-form input,
-form select,
-form textarea {
+form input, form select, form textarea {
   padding: 10px;
   border-radius: 5px;
   border: 1px solid #ccc;
@@ -314,159 +303,126 @@ form button {
   cursor: pointer;
 }
 
-.preview-container {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.preview-container img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 5px;
-}
-
-
 /* ============================= */
-/* 📌 PROFESSIONAL FOOTER */
+/* 📌 FOOTER */
 /* ============================= */
 
 .footer-section {
-    background-color: #1a3a1a; 
-    color: white;
-    padding: 40px 20px 10px;
-    margin-top: 50px;
-    text-align: left; /* Reset from global text-center if needed */
+  background-color: #1a3a1a;
+  color: white;
+  padding: 40px 20px 10px;
+  margin-top: 50px;
+  text-align: left; 
 }
 
 .footer-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 30px;
 }
 
-.footer-about h3 {
-    color: #ffd700; /* Gold */
-    margin: 0 0 10px 0;
+.footer-about h3 { 
+  color: #ffd700; 
+  margin-bottom: 10px; 
 }
 
-.footer-about p {
-    font-style: italic;
-    font-size: 0.95rem;
-    margin: 0 0 5px 0;
-}
-
-.project-info {
-    font-style: normal !important;
-    opacity: 0.7;
-    font-size: 0.85rem !important;
-}
-
-.footer-contact h4 {
-    margin: 0 0 15px 0;
-    color: #fff;
-}
-
-.footer-socials {
-    display: flex;
-    gap: 15px;
-    margin-top: 10px;
+.footer-socials { 
+  display: flex; 
+  gap: 15px; 
+  margin-top: 10px; 
 }
 
 .social-icon {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: white;
-    text-decoration: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    font-size: 0.9rem;
-    font-weight: bold;
-    transition: 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  text-decoration: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: 0.3s;
 }
 
 .github { background-color: #333; }
 .linkedin { background-color: #0077b5; }
 
-.social-icon:hover {
-    transform: translateY(-3px);
-    filter: brightness(1.2);
+.social-icon:hover { 
+  transform: translateY(-3px); 
+  filter: brightness(1.2); 
 }
 
+/* 🔥 FIXED CENTER ALIGNMENT HERE */
 .footer-bottom {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.8rem;
-    opacity: 0.6;
+  text-align: center !important; /* Force centering */
+  display: block;
+  width: 100%;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
+.footer-bottom p {
+  margin: 5px 0;
+  text-align: center;
+}
 
 /* ============================= */
 /* 📱 MOBILE */
 /* ============================= */
 
 @media (max-width: 768px) {
-  .main-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .main-header { 
+    flex-direction: column; 
+    align-items: center;   /* Centered for mobile */
+    text-align: center;
+    gap: 10px; 
   }
-
-  .logo-section img {
-    height: 40px;
+  
+  .logo-section img { height: 40px; }
+  
+  .search-section { 
+    flex-direction: column; 
+    width: 95%; 
+    margin-top: -20px; 
+    border-radius: 20px;
   }
-
-  .title-section {
-    margin-left: 0;
-  }
-
-  .post-btn {
-    align-self: flex-end;
-  }
-
-  .hero {
-    height: 220px;
-  }
-
-  .hero-overlay h1 {
-    font-size: 22px;
-  }
-
-  .search-section {
-    flex-direction: column;
-    width: 95%;
-    margin-top: -20px;
-  }
-
-  .search-section input,
-  .search-section select,
-  .search-section button {
-    width: 100%;
-  }
-
-  .items-container {
-    grid-template-columns: 1fr;
+  
+  .search-section input, 
+  .search-section select, 
+  .search-section button { 
+    width: 100%; 
   }
 
   .footer-container {
-      flex-direction: column;
-      text-align: center;
+    flex-direction: column;
+    text-align: center;
   }
-  
+
   .footer-socials {
-      justify-content: center;
+    justify-content: center;
   }
 }
 
+/* ============================= */
+/* 📱 MOBILE */
+/* ============================= */
+
+@media (max-width: 768px) {
+  .main-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .logo-section img { height: 40px; }
+  .search-section { flex-direction: column; width: 95%; margin-top: -20px; }
+  .search-section input, .search-section select, .search-section button { width: 100%; }
+}
+
 .back-btn {
-  background: #b22222; 
+  background: #b22222;
   color: white;
   padding: 6px 12px;
   border-radius: 5px;
@@ -478,29 +434,6 @@ form button {
   cursor: pointer;
 }
 
-.back-btn:hover {
-  background: #8b1a1a;
-}
-
-.image-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.9);
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.image-modal img {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 10px;
-  cursor: zoom-out;
-}
 /* ============================= */
 /* 🛡️ SECURITY & FORM ENHANCEMENTS */
 /* ============================= */
@@ -515,30 +448,9 @@ form button {
   color: #a94442;
 }
 
-.warning-box ul {
-  margin: 5px 0;
-  padding-left: 20px;
-}
-
 .agreement-section {
   margin: 15px 0;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-}
-
-/* Fix for checkboxes to prevent them from stretching */
-.agreement-section input[type="checkbox"] {
-  width: 18px !important; /* Overrides global input width */
-  height: 18px !important;
-  cursor: pointer;
-  margin-top: 2px;
-}
-
-.agreement-label {
-  font-size: 12px;
-  color: #555;
-  cursor: pointer;
-  line-height: 1.4;
-  user-select: none;
 }

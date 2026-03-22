@@ -28,14 +28,14 @@ onAuthStateChanged(auth, (user) => {
     userAvatar.src = user.photoURL;
     localStorage.setItem("userUID", user.uid);
 
-    // 🔔 NOTIFICATION 1: Pending claims for you as a Finder
+    // 🔔 Incoming claims for you as a Finder
     const incomingClaimsQuery = query(
       collection(db, "claims"), 
       where("finderId", "==", user.uid),
       where("status", "==", "Pending")
     );
 
-    // 🔔 NOTIFICATION 2: Approved claims for you as a Claimer
+    // 🔔 Approved claims for you as a Claimer
     const approvedClaimsQuery = query(
       collection(db, "claims"),
       where("claimerId", "==", user.uid),
@@ -110,7 +110,7 @@ async function loadItems() {
 
   querySnapshot.forEach((document) => {
     const data = document.data();
-    const docId = document.id;
+    const docId = document.id; // 🔥 Firestore's unique ID
     const ageInDays = (now - data.createdAt) / (1000 * 60 * 60 * 24);
 
     let shouldDelete = false;
@@ -131,7 +131,7 @@ async function loadItems() {
     if (shouldDelete) {
       deletePromises.push(deleteDoc(doc(db, "items", docId)));
     } else {
-      // Pass the docId into the data object so card clicks work correctly
+      // 🔥 CRITICAL: We attach the docId to the item object
       items.push({ ...data, docId }); 
     }
   });
@@ -159,13 +159,13 @@ function displayItems(data) {
   data.forEach(item => {
     const isNew = (now - item.createdAt) < (24 * 60 * 60 * 1000);
     
-    // Using your local placeholder image for items without uploads
     const image = (item.images && item.images.length > 0) 
       ? item.images[0] 
       : "images/placeholder.jpg"; 
 
+    // 🔥 FIX: We use item.docId as the data-id
     const card = `
-      <div class="card" data-id="${item.id}">
+      <div class="card" data-id="${item.docId}">
         <img src="${image}" alt="${item.title}" onerror="this.src='images/placeholder.png'">
         <div class="card-content">
           <span class="tag ${item.type.toLowerCase()}">${item.type}</span>
@@ -180,10 +180,11 @@ function displayItems(data) {
     container.innerHTML += card;
   });
 
+  // Attach event listeners to newly created cards
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("click", () => {
-      const id = card.getAttribute("data-id");
-      openDetails(id);
+      const docId = card.getAttribute("data-id");
+      openDetails(docId);
     });
   });
 }
@@ -220,8 +221,9 @@ typeFilter.addEventListener("change", applyFilters);
 /* 🔹 ACTIONS */
 /* ============================= */
 
-function openDetails(id) {
-  localStorage.setItem("selectedItemId", id);
+function openDetails(docId) {
+  // 🔥 Store the Firestore ID for the details page
+  localStorage.setItem("selectedItemId", docId);
   window.location.href = "details.html";
 }
 
@@ -253,3 +255,4 @@ function getTimeAgo(time) {
 
 loadItems();
 window.resetFilters = resetFilters;
+

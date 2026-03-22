@@ -1,11 +1,15 @@
 import { db, auth } from "./firebase.js";
-import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* ============================= */
+/* 🔹 CONFIGURATION */
+/* ============================= */
+const DAILY_POST_LIMIT = 2; 
 
 /* ============================= */
 /* 🔹 DOM ELEMENTS */
 /* ============================= */
-
 const form = document.getElementById("postForm");
 const imageInput = document.getElementById("images");
 const previewContainer = document.getElementById("imagePreview");
@@ -13,12 +17,11 @@ const typeSelect = document.getElementById("type");
 const securitySection = document.getElementById("securitySection");
 const formContainer = document.getElementById("postFormContainer");
 const loadingMsg = document.getElementById("loadingMsg");
-const agreeCheckbox = document.getElementById("guidelineAgree"); // 🔥 NEW
+const agreeCheckbox = document.getElementById("guidelineAgree");
 
 /* ============================= */
 /* 🔹 AUTH CHECK */
 /* ============================= */
-
 onAuthStateChanged(auth, (user) => {
   if (user) {
     formContainer.style.display = "block";
@@ -30,23 +33,19 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ============================= */
-/* 🔹 IMAGE HANDLING & COMPRESSION */
+/* 🔹 IMAGE HANDLING */
 /* ============================= */
-
 let imageDataArray = [];
-
 imageInput.addEventListener("change", () => {
   previewContainer.innerHTML = "";
   imageDataArray = [];
-
   const files = Array.from(imageInput.files).slice(0, 4);
 
   files.forEach(file => {
     if (file.size > 500 * 1024) {
-      alert(`Image "${file.name}" is too large. Please use a smaller photo or a screenshot.`);
+      alert(`Image "${file.name}" is too large. Please use a smaller photo (under 500KB).`);
       return;
     }
-
     const reader = new FileReader();
     reader.onload = (e) => {
       imageDataArray.push(e.target.result);
@@ -59,18 +58,15 @@ imageInput.addEventListener("change", () => {
 });
 
 /* ============================= */
-/* 🔹 SECURITY SECTION TOGGLE */
+/* 🔹 SECURITY TOGGLE */
 /* ============================= */
-
 typeSelect.addEventListener("change", () => {
   const value = typeSelect.value;
   const securityLabel = securitySection.querySelector('p');
-
   if (value === "Found" || value === "Lost") {
     securitySection.style.display = "block";
-    
     if (value === "Lost") {
-      securityLabel.innerHTML = "<strong>Set a Security Question (for the person who finds it)</strong><br><small style='color: gray;'>Ask something specific only the finder would see (e.g., 'What color is the internal zipper?')</small>";
+      securityLabel.innerHTML = "<strong>Set a Security Question (for the finder)</strong><br><small style='color: gray;'>Ask about a detail only the finder would see.</small>";
     } else {
       securityLabel.innerHTML = "<strong>Set a Security Question (for the owner)</strong><br><small style='color: gray;'>Ask something only the real owner would know.</small>";
     }
@@ -80,15 +76,13 @@ typeSelect.addEventListener("change", () => {
 });
 
 /* ============================= */
-/* 🔹 FORM SUBMISSION */
+/* 🔹 FORM SUBMISSION (STRICT) */
 /* ============================= */
-
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
   
-  // 🔥 NEW: Guideline Validation
   if (!agreeCheckbox.checked) {
-    alert("Please check the box to agree to the community guidelines before posting.");
+    alert("Please agree to the community guidelines.");
     return;
   }
 
@@ -98,14 +92,36 @@ form.addEventListener("submit", (e) => {
     return;
   }
 
-  const type = typeSelect.value;
+  // --- 🛑 STEP 1: STRICT LIMIT CHECK ---
+  try {
+    const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const q = query(
+      collection(db, "items"),
+      where("userId", "==", user.uid),
+      where("createdAt", ">=", twentyFourHoursAgo)
+    );
 
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.size >= DAILY_POST_LIMIT) {
+      alert(`Limit reached! You can only post ${DAILY_POST_LIMIT} items every 24 hours.`);
+      return; 
+    }
+  } catch (err) {
+    console.error("Security Check Error:", err);
+    // Blocks post if ad-blocker or indexing prevents the check
+    alert("Security check failed. Please ensure no ad-blockers are active and try again.");
+    return; 
+  }
+
+  // --- ✅ STEP 2: PREPARE DATA ---
+  const type = typeSelect.value;
   if (type === "Found" && imageDataArray.length === 0) {
     alert("Please upload at least one image for FOUND items.");
     return;
   }
 
-  const item = {
+  const itemData = {
     userId: user.uid,
     userEmail: user.email,
     username: user.displayName || document.getElementById("username").value || "Anonymous",
@@ -123,13 +139,13 @@ form.addEventListener("submit", (e) => {
     createdAt: Date.now()
   };
 
-  addDoc(collection(db, "items"), item)
-  .then(() => {
+  // --- 🚀 STEP 3: SAVE & REDIRECT ---
+  try {
+    const docRef = await addDoc(collection(db, "items"), itemData);
     alert("Item posted successfully!");
-    window.location.href = "index.html";
-  })
-  .catch(error => {
+    window.location.href = "index.html"; 
+  } catch (error) {
     console.error("Error posting item:", error);
-    alert("Error posting item. Try using fewer or smaller images.");
-  });
+    alert("Error posting item. Try smaller images.");
+  }
 });
