@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard | CBIT Lost & Found</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body style="background: #f0f2f5;">
+
+  <header class="main-header" style="background: #1a1a1a;">
+    <div class="logo-section"><img src="images/logo.png" alt="CBIT Logo"></div>
+    <div class="title-section">
+      <h1>Admin Control Panel</h1>
+      <p>System Overview & Moderation</p>
+    </div>
+    <a href="index.html" class="back-btn">Exit Admin</a>
+  </header>
+
+  <div class="accent-line" style="background: #d4af37;"></div>
+
+  <section class="details-container" style="max-width: 1000px;">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
+      <div class="details-box" style="text-align: center;">
+        <h3 id="totalPosts">0</h3>
+        <p style="font-size: 0.8rem; color: gray;">Total Items</p>
+      </div>
+      <div class="details-box" style="text-align: center;">
+        <h3 id="totalUsers">0</h3>
+        <p style="font-size: 0.8rem; color: gray;">Registered Users</p>
+      </div>
+      <div class="details-box" style="text-align: center;">
+        <h3 id="totalClaims">0</h3>
+        <p style="font-size: 0.8rem; color: gray;">Active Claims</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <button onclick="switchTab('posts')" class="post-btn" style="background: #2e5e2e;">Manage Posts</button>
+      <button onclick="switchTab('users')" class="post-btn" style="background: #444;">Manage Users</button>
+    </div>
+
+    <div id="adminContent" class="details-box">
+      <p style="text-align: center; color: #999;">Loading management data...</p>
+    </div>
+  </section>
+
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>

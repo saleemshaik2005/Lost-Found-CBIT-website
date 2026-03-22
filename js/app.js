@@ -52,6 +52,17 @@ onAuthStateChanged(auth, (user) => {
 
     localStorage.setItem("userUID", user.uid);
 
+    // ✅ ADMIN LINK LOGIC: Only shows for you
+    if (user.email === "saleemshaik2005@gmail.com") {
+      if (!document.getElementById("adminLink")) {
+        const adminLink = document.createElement("a");
+        adminLink.id = "adminLink";
+        adminLink.href = "admin.html";
+        adminLink.innerHTML = `<i class="fas fa-user-shield"></i> Admin Dashboard`;
+        dropdownMenu.appendChild(adminLink);
+      }
+    }
+
     // 🔔 Notifications Logic
     const incomingClaimsQuery = query(
       collection(db, "claims"), 
@@ -98,6 +109,10 @@ onAuthStateChanged(auth, (user) => {
     loginBtn.style.display = "block";
     userProfile.style.display = "none";
     localStorage.removeItem("userUID");
+    
+    // Remove Admin link if logging out
+    const adminLink = document.getElementById("adminLink");
+    if (adminLink) adminLink.remove();
   }
 });
 
