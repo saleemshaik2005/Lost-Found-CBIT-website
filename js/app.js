@@ -1,6 +1,6 @@
 import { auth, provider, db } from "./firebase.js";
 import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { collection, getDocs, query, where, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, where, onSnapshot, deleteDoc, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ============================= */
 /* 🔹 DOM ELEMENTS */
@@ -37,22 +37,47 @@ window.onclick = function(event) {
 }
 
 /* ============================= */
-/* 🔹 AUTHENTICATION & NOTIFICATIONS */
+/* 🔹 AUTHENTICATION & SECURITY */
 /* ============================= */
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
+    // 🛡️ 1. BAN CHECK: Immediately kick out restricted users
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists() && userSnap.data().isBanned) {
+      alert("Your access to the CBIT Lost & Found portal has been restricted by the admin.");
+      await signOut(auth);
+      window.location.reload();
+      return; 
+    }
+
+    // 🛡️ 2. AUTO-REGISTER: Ensure new users exist in Firestore
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        displayName: user.displayName || "CBIT Student",
+        email: user.email,
+        photoURL: user.photoURL || "",
+        rollNumber: "Not Provided",
+        registeredAt: serverTimestamp(),
+        isBanned: false
+      });
+      console.log("New student auto-registered!");
+    }
+
+    // ✅ UI Setup
     loginBtn.style.display = "none";
     userProfile.style.display = "flex";
     
-    // ✅ SAFE AVATAR LOGIC
     const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=2e5e2e&color=fff`;
     userAvatar.src = user.photoURL || defaultAvatar;
     userAvatar.onerror = function() { this.src = defaultAvatar; };
 
     localStorage.setItem("userUID", user.uid);
 
-    // ✅ ADMIN LINK LOGIC: Only shows for you
+    // ✅ ADMIN LINK: Only for saleemshaik2005@gmail.com
     if (user.email === "saleemshaik2005@gmail.com") {
       if (!document.getElementById("adminLink")) {
         const adminLink = document.createElement("a");
@@ -64,17 +89,8 @@ onAuthStateChanged(auth, (user) => {
     }
 
     // 🔔 Notifications Logic
-    const incomingClaimsQuery = query(
-      collection(db, "claims"), 
-      where("finderId", "==", user.uid),
-      where("status", "==", "Pending")
-    );
-
-    const approvedClaimsQuery = query(
-      collection(db, "claims"),
-      where("claimerId", "==", user.uid),
-      where("status", "==", "Approved")
-    );
+    const incomingClaimsQuery = query(collection(db, "claims"), where("finderId", "==", user.uid), where("status", "==", "Pending"));
+    const approvedClaimsQuery = query(collection(db, "claims"), where("claimerId", "==", user.uid), where("status", "==", "Approved"));
 
     let incomingCount = 0;
     let approvedCount = 0;
@@ -89,28 +105,15 @@ onAuthStateChanged(auth, (user) => {
       }
     };
 
-    onSnapshot(incomingClaimsQuery, (snapshot) => {
-      incomingCount = snapshot.size;
-      updateBell();
-    });
+    onSnapshot(incomingClaimsQuery, (snapshot) => { incomingCount = snapshot.size; updateBell(); });
+    onSnapshot(approvedClaimsQuery, (snapshot) => { approvedCount = snapshot.size; updateBell(); });
 
-    onSnapshot(approvedClaimsQuery, (snapshot) => {
-      approvedCount = snapshot.size;
-      updateBell();
-    });
-
-    if (notifBell) {
-      notifBell.onclick = () => {
-        window.location.href = "notifications.html";
-      };
-    }
+    if (notifBell) notifBell.onclick = () => { window.location.href = "notifications.html"; };
 
   } else {
     loginBtn.style.display = "block";
     userProfile.style.display = "none";
     localStorage.removeItem("userUID");
-    
-    // Remove Admin link if logging out
     const adminLink = document.getElementById("adminLink");
     if (adminLink) adminLink.remove();
   }
@@ -121,11 +124,7 @@ onAuthStateChanged(auth, (user) => {
 /* ============================= */
 
 loginBtn.addEventListener("click", async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (error) {
-    console.error("Login failed:", error);
-  }
+  try { await signInWithPopup(auth, provider); } catch (error) { console.error("Login failed:", error); }
 });
 
 logoutBtn.addEventListener("click", () => signOut(auth));
@@ -162,7 +161,6 @@ async function loadItems() {
   });
 
   if (deletePromises.length > 0) await Promise.all(deletePromises);
-
   items.sort((a, b) => b.createdAt - a.createdAt);
   displayItems(items);
 }
@@ -173,7 +171,6 @@ async function loadItems() {
 
 function displayItems(data) {
   container.innerHTML = "";
-
   if (data.length === 0) {
     container.innerHTML = `<div class="empty"><h3>No items found</h3><p>Try changing your filters</p></div>`;
     return;
@@ -199,7 +196,6 @@ function displayItems(data) {
     container.innerHTML += card;
   });
 
-  // Re-attach listeners to the fresh cards
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("click", () => {
       const docId = card.getAttribute("data-id");
@@ -224,13 +220,8 @@ function applyFilters() {
 
   if (categoryValue) filtered = filtered.filter(item => item.category === categoryValue);
   if (typeValue) filtered = filtered.filter(item => item.type === typeValue);
-
   displayItems(filtered);
 }
-
-/* ============================= */
-/* 🔹 HELPER FUNCTIONS */
-/* ============================= */
 
 function openDetails(docId) {
   localStorage.setItem("selectedItemId", docId);
@@ -258,10 +249,6 @@ function getTimeAgo(time) {
   }
   return "Just now";
 }
-
-/* ============================= */
-/* 🔹 INITIALIZE */
-/* ============================= */
 
 loadItems();
 searchInput.addEventListener("input", applyFilters);

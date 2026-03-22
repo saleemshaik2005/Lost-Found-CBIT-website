@@ -1,5 +1,6 @@
 import { db, auth } from "./firebase.js";
 import { doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ============================= */
 /* 🔹 DOM */
@@ -36,7 +37,6 @@ async function loadItem() {
 /* 🔹 RENDER */
 /* ============================= */
 function renderItem(item, docId) {
-  // ✅ Restored: Clean image check without the extra text labels
   const hasImages = item.images && Array.isArray(item.images) && item.images.length > 0;
 
   const imagesHTML = hasImages
@@ -78,6 +78,12 @@ function renderItem(item, docId) {
 
       ${actionButton}
       
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="reportPost('${docId}', '${item.title}')" style="background:none; border:none; color:#b22222; cursor:pointer; text-decoration:underline; font-size:13px; font-weight:bold;">
+          <i class="fas fa-flag"></i> Report this post (Fake / Inappropriate)
+        </button>
+      </div>
+
       <p id="contactInfo" style="display:none; margin-top: 15px; color: #2e5e2e; font-weight: bold; padding: 10px; background: #e8f5e9; border-radius: 5px;">
         ✅ Verified Contact: ${item.contact}
       </p>
@@ -141,12 +147,41 @@ async function submitClaim(docId, posterId) {
     alert("Request sent!");
     location.reload();
   } catch (error) {
+    console.error("Error submitting claim:", error);
     alert("Error sending request.");
   }
 }
 
 /* ============================= */
-/* 🔹 IMAGE MODAL (RESTORED) */
+/* 🔹 REPORT LOGIC */
+/* ============================= */
+window.reportPost = async (docId, itemTitle) => {
+  const user = auth.currentUser;
+  if (!user) return alert("Please log in to report a post.");
+
+  const reason = prompt("Why are you reporting this post?\n(e.g., Fake item, Inappropriate content, already recovered)");
+  if (!reason || reason.trim() === "") return;
+
+  try {
+    await addDoc(collection(db, "reports"), {
+      itemId: docId,
+      itemTitle: itemTitle,
+      reportedByEmail: user.email,
+      reportedById: user.uid,
+      reason: reason.trim(),
+      status: "Unreviewed",
+      timestamp: Date.now()
+    });
+
+    alert("The report has been sent to the Admin. Thank you for keeping the CBIT community safe!");
+  } catch (error) {
+    console.error("Error reporting post:", error);
+    alert("Failed to send report. Please check your connection.");
+  }
+};
+
+/* ============================= */
+/* 🔹 IMAGE MODAL */
 /* ============================= */
 window.openImage = function(src) {
   const modal = document.getElementById("imageModal");
