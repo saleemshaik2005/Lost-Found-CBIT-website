@@ -16,6 +16,27 @@ const searchInput = document.getElementById("searchInput");
 const categoryFilter = document.getElementById("categoryFilter");
 const typeFilter = document.getElementById("typeFilter");
 const container = document.getElementById("itemsContainer");
+const dropdownMenu = document.getElementById("dropdownMenu");
+
+/* ============================= */
+/* 🔹 DROPDOWN LOGIC */
+/* ============================= */
+
+// Function to show/hide the profile menu
+function toggleDropdown() {
+  if (dropdownMenu) {
+    dropdownMenu.classList.toggle("show");
+  }
+}
+
+// Close the dropdown if the user clicks outside of it
+window.onclick = function(event) {
+  if (!event.target.matches('#userAvatar')) {
+    if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+      dropdownMenu.classList.remove('show');
+    }
+  }
+}
 
 /* ============================= */
 /* 🔹 AUTHENTICATION & NOTIFICATIONS */
@@ -110,17 +131,15 @@ async function loadItems() {
 
   querySnapshot.forEach((document) => {
     const data = document.data();
-    const docId = document.id; // 🔥 Firestore's unique ID
+    const docId = document.id; 
     const ageInDays = (now - data.createdAt) / (1000 * 60 * 60 * 24);
 
     let shouldDelete = false;
 
-    // Rule 1: Delete if not recovered for 10 days
     if (data.status !== "Recovered" && ageInDays >= 10) {
       shouldDelete = true;
     }
 
-    // Rule 2: Delete if recovered for more than 5 days
     if (data.status === "Recovered" && data.recoveredAt) {
       const recoveredAge = (now - data.recoveredAt) / (1000 * 60 * 60 * 24);
       if (recoveredAge >= 5) {
@@ -131,7 +150,6 @@ async function loadItems() {
     if (shouldDelete) {
       deletePromises.push(deleteDoc(doc(db, "items", docId)));
     } else {
-      // 🔥 CRITICAL: We attach the docId to the item object
       items.push({ ...data, docId }); 
     }
   });
@@ -163,7 +181,6 @@ function displayItems(data) {
       ? item.images[0] 
       : "images/placeholder.jpg"; 
 
-    // 🔥 FIX: We use item.docId as the data-id
     const card = `
       <div class="card" data-id="${item.docId}">
         <img src="${image}" alt="${item.title}" onerror="this.src='images/placeholder.png'">
@@ -180,7 +197,6 @@ function displayItems(data) {
     container.innerHTML += card;
   });
 
-  // Attach event listeners to newly created cards
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("click", () => {
       const docId = card.getAttribute("data-id");
@@ -222,7 +238,6 @@ typeFilter.addEventListener("change", applyFilters);
 /* ============================= */
 
 function openDetails(docId) {
-  // 🔥 Store the Firestore ID for the details page
   localStorage.setItem("selectedItemId", docId);
   window.location.href = "details.html";
 }
@@ -255,4 +270,4 @@ function getTimeAgo(time) {
 
 loadItems();
 window.resetFilters = resetFilters;
-
+window.toggleDropdown = toggleDropdown;

@@ -4,14 +4,12 @@ import { doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebas
 /* ============================= */
 /* 🔹 DOM */
 /* ============================= */
-
 const container = document.getElementById("detailsContainer");
-const selectedId = localStorage.getItem("selectedItemId"); // This is now the Firestore Document ID
+const selectedId = localStorage.getItem("selectedItemId");
 
 /* ============================= */
 /* 🔹 LOAD ITEM FROM FIREBASE */
 /* ============================= */
-
 async function loadItem() {
   if (!selectedId) {
     container.innerHTML = "<p style='text-align:center; padding:20px;'>No item selected. Return to <a href='index.html'>Home</a>.</p>";
@@ -19,7 +17,6 @@ async function loadItem() {
   }
 
   try {
-    // 🔥 FIX: Direct fetch using the Document ID (much more reliable)
     const docRef = doc(db, "items", selectedId);
     const docSnap = await getDoc(docRef);
 
@@ -38,14 +35,15 @@ async function loadItem() {
 /* ============================= */
 /* 🔹 RENDER */
 /* ============================= */
-
 function renderItem(item, docId) {
+  // ✅ Restored: Clean image check without the extra text labels
+  const hasImages = item.images && Array.isArray(item.images) && item.images.length > 0;
 
-  const imagesHTML = (item.images && item.images.length > 0)
+  const imagesHTML = hasImages
     ? item.images.map(img =>
-        `<img src="${img}" onclick="openImage('${img}')" style="cursor:zoom-in;">`
+        `<img src="${img}" class="clickable-img" onclick="openImage('${img}')" style="cursor:zoom-in;" onerror="this.style.display='none'">`
       ).join("")
-    : `<img src="images/placeholder.jpg">`;
+    : `<img src="images/placeholder.jpg" alt="No image available">`;
 
   let actionButton = "";
   if (item.status === "Open") {
@@ -62,7 +60,6 @@ function renderItem(item, docId) {
 
   container.innerHTML = `
     <div class="details-box">
-
       <div class="details-images">
         ${imagesHTML}
       </div>
@@ -87,11 +84,8 @@ function renderItem(item, docId) {
 
       <div id="claimSection" style="display:none; margin-top: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa;">
         <p><strong>Security Question:</strong> <span id="displayQuestion"></span></p>
-        
         <input type="text" id="claimAnswer" placeholder="Your answer here..." style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;">
-        
         <input type="text" id="claimerContact" placeholder="Your Phone / WhatsApp" style="width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px;">
-        
         <button class="recover-btn" style="width: 100%;" onclick="submitClaim('${docId}', '${item.userId}')">Submit & Request Approval</button>
       </div>
 
@@ -100,7 +94,6 @@ function renderItem(item, docId) {
           <p style="color: #444; margin: 0;"><strong>🎉 This item has been successfully recovered!</strong></p>
         </div>
       ` : ""}
-
     </div>
   `;
 }
@@ -108,7 +101,6 @@ function renderItem(item, docId) {
 /* ============================= */
 /* 🔹 ACTIONS */
 /* ============================= */
-
 function handleClaimClick(question, docId, posterId, type) {
   const user = auth.currentUser;
   if (!user) {
@@ -121,7 +113,7 @@ function handleClaimClick(question, docId, posterId, type) {
     return;
   }
 
-  const defaultMsg = type === "Found" ? "The finder didn't set a question. Please describe the item accurately." : "Please verify your claim below.";
+  const defaultMsg = type === "Found" ? "Describe the item accurately." : "Please verify your claim below.";
   document.getElementById("displayQuestion").innerText = question || defaultMsg;
   document.getElementById("claimSection").style.display = "block";
   document.getElementById("claimSection").scrollIntoView({ behavior: 'smooth' });
@@ -132,9 +124,7 @@ async function submitClaim(docId, posterId) {
   const contact = document.getElementById("claimerContact").value.trim();
   const user = auth.currentUser;
 
-  if (!answer || !contact) {
-    return alert("Please provide both an answer and your contact details.");
-  }
+  if (!answer || !contact) return alert("Fill all fields.");
 
   try {
     await addDoc(collection(db, "claims"), {
@@ -148,39 +138,33 @@ async function submitClaim(docId, posterId) {
       status: "Pending",
       timestamp: Date.now()
     });
-
-    alert("Request sent! The poster will be notified. Once they approve your answer, you both can see each other's contact details in the Notifications page.");
+    alert("Request sent!");
     location.reload();
   } catch (error) {
-    console.error("Error submitting claim:", error);
-    alert("Failed to send request. Check your connection.");
+    alert("Error sending request.");
   }
 }
 
 /* ============================= */
-/* 🔹 IMAGE MODAL */
+/* 🔹 IMAGE MODAL (RESTORED) */
 /* ============================= */
-
-function openImage(src) {
+window.openImage = function(src) {
   const modal = document.getElementById("imageModal");
   const modalImg = document.getElementById("modalImg");
   if(modal && modalImg) {
     modal.style.display = "flex";
     modalImg.src = src;
   }
-}
+};
 
-function closeImage() {
+window.closeImage = function() {
   const modal = document.getElementById("imageModal");
   if(modal) modal.style.display = "none";
-}
+};
 
 /* ============================= */
 /* 🔹 INIT */
 /* ============================= */
-
 loadItem();
-window.openImage = openImage;
-window.closeImage = closeImage;
 window.handleClaimClick = handleClaimClick;
 window.submitClaim = submitClaim;

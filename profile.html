@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Profile | CBIT Lost & Found</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+  <header class="main-header">
+    <div class="logo-section">
+      <img src="images/logo.png" alt="CBIT Logo">
+    </div>
+    <div class="title-section">
+      <h1>My Profile</h1>
+      <p>Manage your account and posts</p>
+    </div>
+    <a href="index.html" class="back-btn">Back to Home</a>
+  </header>
+
+  <div class="accent-line"></div>
+
+  <section class="form-section">
+    <div class="details-box" style="margin-bottom: 30px;">
+      
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="position: relative; display: inline-block;">
+            <img id="profilePic" src="" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #2e5e2e; object-fit: cover;">
+            </div>
+        <h2 id="profileName" style="margin: 15px 0 5px; color: #333;">---</h2>
+        <p id="profileEmail" style="color: gray; margin-bottom: 20px; font-size: 14px;">---</p>
+      </div>
+
+      <div id="infoSection" style="background: #fdfdfd; padding: 20px; border-radius: 12px; border: 1px solid #eee; text-align: center;">
+        <div style="margin-bottom: 20px;">
+            <p style="margin: 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold;">Roll Number</p>
+            <p id="displayRoll" style="font-size: 20px; font-weight: bold; margin: 5px 0; color: #2e5e2e;">Not Provided</p>
+        </div>
+        
+        <button onclick="toggleEdit(true)" style="background: white; border: 1.5px solid #2e5e2e; color: #2e5e2e; padding: 10px 25px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+          <i class="fas fa-edit"></i> Edit Profile Details
+        </button>
+      </div>
+
+      <div id="editSection" style="display: none; background: #fff; padding: 25px; border-radius: 12px; border: 2px dashed #2e5e2e; animation: fadeIn 0.3s;">
+        <h4 style="margin: 0 0 20px 0; color: #2e5e2e;"><i class="fas fa-user-edit"></i> Update Information</h4>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight: bold; font-size: 13px; color: #555;">Display Name</label>
+            <input type="text" id="nameInput" placeholder="Enter Name" style="width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="font-weight: bold; font-size: 13px; color: #555;">Roll Number</label>
+            <input type="text" id="rollNumberInput" placeholder="e.g., 160122733xxx" style="width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;">
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+          <button id="saveProfileBtn" onclick="saveProfile()" style="flex: 2; background: #2e5e2e; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;">
+            Save Changes
+          </button>
+          <button onclick="toggleEdit(false)" style="flex: 1; background: #f0f0f0; color: #666; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 40px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+        <h3 style="margin: 0; color: #333;"><i class="fas fa-history"></i> My Submissions</h3>
+        <span id="postCount" style="background: #2e5e2e; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;">0 Posts</span>
+    </div>
+
+    <div id="myItemsContainer" class="items-container" style="padding: 20px 0;">
+      <p id="loadingPosts" style="text-align: center; color: #999; width: 100%;">Loading your campus history...</p>
+    </div>
+  </section>
+
+  <div id="imageModal" class="image-modal" onclick="closeImage()">
+    <img id="modalImg" src="">
+  </div>
+
+  <footer class="footer-bottom" style="margin-top: 50px;">
+    <p>&copy; 2026 | Handcrafted by <strong>Saleem Shaik</strong></p>
+  </footer>
+
+  <script type="module" src="js/profile.js"></script>
+
+  <style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+
+</body>
+</html>

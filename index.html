@@ -32,7 +32,13 @@
           <span id="notifCount" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px;">0</span>
         </div>
         
-        <img id="userAvatar" src="" style="width: 35px; border-radius: 50%;">
+        <div class="profile-dropdown">
+          <img id="userAvatar" src="" alt="User Profile" onclick="toggleDropdown()">
+          <div id="dropdownMenu" class="dropdown-content">
+             <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
+             </div>
+        </div>
+
         <a href="post.html" class="post-btn">+ Post Item</a>
         <button id="logoutBtn" class="back-btn" style="background: #555;">Logout</button>
       </div>
@@ -41,14 +47,12 @@
 
   <div class="accent-line"></div>
 
-
   <section class="hero">
     <div class="hero-overlay">
       <h1>CBIT Lost & Found</h1>
       <p>Helping students recover lost items across campus</p>
     </div>
   </section>
-
 
   <section class="search-section">
     <input 
@@ -74,10 +78,7 @@
     <button onclick="resetFilters()">Reset</button>
   </section>
 
-
-  <section id="itemsContainer" class="items-container">
-    </section>
-
+  <section id="itemsContainer" class="items-container"></section>
 
   <footer class="footer-section">
     <div class="footer-container">
@@ -108,7 +109,6 @@
         </p>
     </div>
   </footer>
-
 
   <script type="module" src="js/app.js"></script>
 
