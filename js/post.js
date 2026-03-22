@@ -33,25 +33,55 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ============================= */
-/* 🔹 IMAGE HANDLING */
+/* 🔹 FAST IMAGE HANDLING & COMPRESSION */
 /* ============================= */
 let imageDataArray = [];
+
 imageInput.addEventListener("change", () => {
   previewContainer.innerHTML = "";
   imageDataArray = [];
   const files = Array.from(imageInput.files).slice(0, 4);
 
-  files.forEach(file => {
-    if (file.size > 500 * 1024) {
-      alert(`Image "${file.name}" is too large. Please use a smaller photo (under 500KB).`);
+  files.forEach((file) => {
+    // 🛑 BLOCK HEIC: Quickly alert the user to use a screenshot instead
+    if (file.name.toLowerCase().endsWith(".heic") || file.type === "image/heic") {
+      alert("iPhone HEIC photos are too slow to process. Please take a screenshot of your photo and upload that instead—it will work instantly!");
       return;
     }
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      imageDataArray.push(e.target.result);
-      const img = document.createElement("img");
+      const img = new Image();
       img.src = e.target.result;
-      previewContainer.appendChild(img);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 800; // Fast, web-friendly size
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Instant compression to JPEG string
+        const compressedData = canvas.toDataURL("image/jpeg", 0.7);
+        imageDataArray.push(compressedData);
+
+        const previewImg = document.createElement("img");
+        previewImg.src = compressedData;
+        previewImg.style.width = "75px";
+        previewImg.style.height = "75px";
+        previewImg.style.objectFit = "cover";
+        previewImg.style.borderRadius = "8px";
+        previewImg.style.marginRight = "10px";
+        previewContainer.appendChild(previewImg);
+      };
     };
     reader.readAsDataURL(file);
   });
@@ -76,7 +106,7 @@ typeSelect.addEventListener("change", () => {
 });
 
 /* ============================= */
-/* 🔹 FORM SUBMISSION (STRICT) */
+/* 🔹 FORM SUBMISSION */
 /* ============================= */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -92,7 +122,7 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  // --- 🛑 STEP 1: STRICT LIMIT CHECK ---
+  // Check Daily Limit
   try {
     const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
     const q = query(
@@ -109,12 +139,10 @@ form.addEventListener("submit", async (e) => {
     }
   } catch (err) {
     console.error("Security Check Error:", err);
-    // Blocks post if ad-blocker or indexing prevents the check
-    alert("Security check failed. Please ensure no ad-blockers are active and try again.");
+    alert("Security check failed. Try disabling ad-blockers and refreshing.");
     return; 
   }
 
-  // --- ✅ STEP 2: PREPARE DATA ---
   const type = typeSelect.value;
   if (type === "Found" && imageDataArray.length === 0) {
     alert("Please upload at least one image for FOUND items.");
@@ -139,13 +167,12 @@ form.addEventListener("submit", async (e) => {
     createdAt: Date.now()
   };
 
-  // --- 🚀 STEP 3: SAVE & REDIRECT ---
   try {
-    const docRef = await addDoc(collection(db, "items"), itemData);
+    await addDoc(collection(db, "items"), itemData);
     alert("Item posted successfully!");
     window.location.href = "index.html"; 
   } catch (error) {
     console.error("Error posting item:", error);
-    alert("Error posting item. Try smaller images.");
+    alert("Error posting item. Make sure your images aren't too large.");
   }
 });

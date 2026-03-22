@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
@@ -44,12 +43,7 @@
     </div>
 
     <form id="postForm">
-      <input 
-        type="text" 
-        id="title" 
-        placeholder="Item Name" 
-        required
-      >
+      <input type="text" id="title" placeholder="Item Name" required>
 
       <select id="category">
         <option value="">All / Not specified</option>
@@ -66,35 +60,18 @@
         <option value="Found">Found</option>
       </select>
 
-      <textarea 
-        id="description" 
-        placeholder="Description"
-        required
-      ></textarea>
+      <textarea id="description" placeholder="Description" required></textarea>
 
-      <input 
-        type="text" 
-        id="location" 
-        placeholder="Location (e.g., Library, Block A)" 
-        required
-      >
+      <input type="text" id="location" placeholder="Location (e.g., Library, Block A)" required>
 
-      <input 
-        type="datetime-local" 
-        id="date" 
-        required
-      >
+      <input type="datetime-local" id="date" required>
 
-      <input 
-        type="file" 
-        id="images" 
-        multiple 
-        accept="image/*"
-      >
+      <input type="file" id="images" multiple accept="image/jpeg, image/png">
 
-      <p style="font-size: 12px; color: gray;">
-        If FOUND item → at least one image is required <br>
-        If LOST item → image is optional
+      <p style="font-size: 12px; color: gray; line-height: 1.4;">
+        <strong>Found items:</strong> At least one image required. <br>
+        <strong>Lost items:</strong> Image is optional. <br>
+        <span style="color: #b22222; font-weight: bold;">iPhone Users: If your photo won't upload (HEIC), please take a screenshot of it and upload that instead!(make sure image type is: .png or .jpg or .jpeg)</span>
       </p>
 
       <div id="imagePreview" class="preview-container"></div>
@@ -106,17 +83,8 @@
         <input type="text" id="securityAnswer" placeholder="The correct answer">
       </div>
 
-      <input 
-        type="text" 
-        id="username" 
-        placeholder="Your Name (optional)"
-      >
-
-      <input 
-        type="text" 
-        id="contact" 
-        placeholder="Contact (Phone / Email / Insta / Telegram)"
-      >
+      <input type="text" id="username" placeholder="Your Name (optional)">
+      <input type="text" id="contact" placeholder="Contact (Phone / Email / Insta / Telegram)">
 
       <div style="margin: 15px 0; display: flex; align-items: flex-start; gap: 10px;">
         <input type="checkbox" id="guidelineAgree" required style="width: auto; height: auto; margin-top: 4px;">
@@ -134,28 +102,17 @@
         <div class="footer-about">
             <h3>Lost & Found CBIT</h3>
             <p>"Building simple tools that make life easier"</p>
-            <p class="project-info">Helping our campus community reconnect with lost belongings.</p>
         </div>
-
         <div class="footer-contact">
             <h4>Let's Connect</h4>
-            <p style="font-size: 0.9rem; margin-bottom: 10px;">🚀 Open to Internships & Collaborations</p>
             <div class="footer-socials">
-                <a href="https://github.com/saleemshaik2005" target="_blank" class="social-icon github">
-                    <i class="fab fa-github"></i> GitHub
-                </a>
-                <a href="https://www.linkedin.com/in/saleemshaikatcbit/" target="_blank" class="social-icon linkedin">
-                    <i class="fab fa-linkedin"></i> LinkedIn
-                </a>
+                <a href="https://github.com/saleemshaik2005" target="_blank" class="social-icon github"><i class="fab fa-github"></i> GitHub</a>
+                <a href="https://www.linkedin.com/in/saleemshaikatcbit/" target="_blank" class="social-icon linkedin"><i class="fab fa-linkedin"></i> LinkedIn</a>
             </div>
         </div>
     </div>
-    
     <div class="footer-bottom">
         <p>&copy; 2026 | Handcrafted by <strong>Saleem Shaik</strong></p>
-        <p style="font-size: 0.7rem; opacity: 0.5; margin-top: 5px; max-width: 600px; margin-left: auto; margin-right: auto;">
-            Disclaimer: This is an independent student project and is not officially affiliated with or endorsed by CBIT administration.
-        </p>
     </div>
   </footer>
 
