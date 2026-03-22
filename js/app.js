@@ -1,6 +1,6 @@
 import { auth, provider, db } from "./firebase.js";
 import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { collection, getDocs, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, query, where, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ============================= */
 /* 🔹 DOM ELEMENTS */
@@ -23,27 +23,26 @@ const container = document.getElementById("itemsContainer");
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    // User is signed in
     loginBtn.style.display = "none";
     userProfile.style.display = "flex";
     userAvatar.src = user.photoURL;
     localStorage.setItem("userUID", user.uid);
 
-    // 🔔 NOTIFICATION 1: Listen for claims sent TO this user (Finder perspective)
+    // 🔔 NOTIFICATION 1: Only "Pending" claims show a dot for the Finder
     const incomingClaimsQuery = query(
       collection(db, "claims"), 
       where("finderId", "==", user.uid),
       where("status", "==", "Pending")
     );
 
-    // 🔔 NOTIFICATION 2: Listen for YOUR approved claims (Claimer perspective)
+    // 🔔 NOTIFICATION 2: Approved claims show a dot for the Claimer until they view them
+    // We'll assume once they view notifications.html, they'll see the details.
     const approvedClaimsQuery = query(
       collection(db, "claims"),
       where("claimerId", "==", user.uid),
       where("status", "==", "Approved")
     );
 
-    // Combine listeners to update the bell count
     let incomingCount = 0;
     let approvedCount = 0;
 
@@ -63,18 +62,10 @@ onAuthStateChanged(auth, (user) => {
     });
 
     onSnapshot(approvedClaimsQuery, (snapshot) => {
-      // Check if a new approval just happened to trigger an alert
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added" || change.type === "modified") {
-           // Optional: You can add an alert here for immediate feedback
-           // alert("Great news! One of your claim requests was approved!");
-        }
-      });
       approvedCount = snapshot.size;
       updateBell();
     });
 
-    // Make the notification bell clickable
     if (notifBell) {
       notifBell.onclick = () => {
         window.location.href = "notifications.html";
@@ -82,7 +73,6 @@ onAuthStateChanged(auth, (user) => {
     }
 
   } else {
-    // User is signed out
     loginBtn.style.display = "block";
     userProfile.style.display = "none";
     localStorage.removeItem("userUID");
@@ -111,24 +101,46 @@ let items = [];
 const now = Date.now();
 
 /* ============================= */
-/* 🔹 LOAD ITEMS FROM FIREBASE */
+/* 🔹 LOAD ITEMS & AUTO-DELETE LOGIC */
 /* ============================= */
 
 async function loadItems() {
   const querySnapshot = await getDocs(collection(db, "items"));
   items = [];
+  const deletePromises = [];
 
-  querySnapshot.forEach((doc) => {
-    items.push(doc.data());
+  querySnapshot.forEach((document) => {
+    const data = document.data();
+    const docId = document.id;
+    const ageInDays = (now - data.createdAt) / (1000 * 60 * 60 * 24);
+
+    let shouldDelete = false;
+
+    // Rule 1: Delete if not recovered for 10 days
+    if (data.status !== "Recovered" && ageInDays >= 10) {
+      shouldDelete = true;
+    }
+
+    // Rule 2: Delete if recovered for more than 5 days
+    if (data.status === "Recovered" && data.recoveredAt) {
+      const recoveredAge = (now - data.recoveredAt) / (1000 * 60 * 60 * 24);
+      if (recoveredAge >= 5) {
+        shouldDelete = true;
+      }
+    }
+
+    if (shouldDelete) {
+      deletePromises.push(deleteDoc(doc(db, "items", docId)));
+    } else {
+      items.push(data);
+    }
   });
 
-  // Remove expired (14 days)
-  items = items.filter(item => {
-    const days = (now - item.createdAt) / (1000 * 60 * 60 * 24);
-    return days <= 14;
-  });
+  // Execute all deletions
+  if (deletePromises.length > 0) {
+    await Promise.all(deletePromises);
+  }
 
-  // Sort latest first
   items.sort((a, b) => b.createdAt - a.createdAt);
   displayItems(items);
 }
@@ -141,20 +153,13 @@ function displayItems(data) {
   container.innerHTML = "";
 
   if (data.length === 0) {
-    container.innerHTML = `
-      <div class="empty">
-        <h3>No items found</h3>
-        <p>Try changing your search or filters</p>
-      </div>
-    `;
+    container.innerHTML = `<div class="empty"><h3>No items found</h3><p>Try changing your filters</p></div>`;
     return;
   }
 
   data.forEach(item => {
     const isNew = (now - item.createdAt) < (24 * 60 * 60 * 1000);
-    const image = (item.images && item.images.length > 0)
-      ? item.images[0]
-      : "https://via.placeholder.com/300";
+    const image = (item.images && item.images.length > 0) ? item.images[0] : "https://via.placeholder.com/300";
 
     const card = `
       <div class="card" data-id="${item.id}">
@@ -169,11 +174,9 @@ function displayItems(data) {
         </div>
       </div>
     `;
-
     container.innerHTML += card;
   });
 
-  // Re-attach listeners to new cards
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("click", () => {
       const id = card.getAttribute("data-id");
@@ -205,10 +208,6 @@ function applyFilters() {
 
   displayItems(filtered);
 }
-
-/* ============================= */
-/* 🔹 EVENTS */
-/* ============================= */
 
 searchInput.addEventListener("input", applyFilters);
 categoryFilter.addEventListener("change", applyFilters);
@@ -244,10 +243,6 @@ function getTimeAgo(time) {
   }
   return "Just now";
 }
-
-/* ============================= */
-/* 🔹 INITIAL LOAD */
-/* ============================= */
 
 loadItems();
 window.resetFilters = resetFilters;

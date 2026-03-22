@@ -1,5 +1,5 @@
 import { db, auth } from "./firebase.js";
-import { collection, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, doc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ============================= */
 /* 🔹 DOM */
@@ -23,7 +23,7 @@ async function loadItem() {
 
     if (data.id == selectedId) {
       foundItem = data;
-      docId = document.id; // 🔥 important for update
+      docId = document.id; // 🔥 important for Firestore document reference
     }
   });
 
@@ -47,10 +47,14 @@ function renderItem(item, docId) {
       ).join("")
     : `<img src="https://via.placeholder.com/300">`;
 
-  // Determine if we show "Reveal Contact" (Lost items) or "Claim" (Found items)
-  const actionButton = (item.type === "Found") 
-    ? `<button class="reveal-btn" style="background: #2e5e2e;" onclick="handleClaimClick('${item.securityQuestion}', '${docId}', '${item.userId}')">Claim This Item</button>`
-    : `<button class="reveal-btn" onclick="revealContact()">Reveal Contact</button>`;
+  // Display "Claim" for Found items, "Reveal Contact" for Lost items
+  // Only show these if the item is still "Open"
+  let actionButton = "";
+  if (item.status === "Open") {
+    actionButton = (item.type === "Found") 
+      ? `<button class="reveal-btn" style="background: #2e5e2e;" onclick="handleClaimClick('${item.securityQuestion}', '${docId}', '${item.userId}')">Claim This Item</button>`
+      : `<button class="reveal-btn" onclick="revealContact()">Reveal Contact</button>`;
+  }
 
   container.innerHTML = `
     <div class="details-box">
@@ -62,7 +66,7 @@ function renderItem(item, docId) {
       <h2>${item.title}</h2>
 
       <p><strong>Type:</strong> ${item.type}</p>
-      <p><strong>Status:</strong> ${item.status}</p>
+      <p><strong>Status:</strong> <span style="color: ${item.status === 'Recovered' ? 'green' : 'orange'}; font-weight: bold;">${item.status}</span></p>
       <p><strong>Description:</strong> ${item.description}</p>
       <p><strong>Location:</strong> ${item.location}</p>
       <p><strong>Date & Time:</strong> ${new Date(item.date).toLocaleString()}</p>
@@ -84,13 +88,10 @@ function renderItem(item, docId) {
         <button class="recover-btn" onclick="submitClaim('${docId}', '${item.userId}')">Submit Claim & Share Contact</button>
       </div>
 
-      <hr style="margin: 20px 0; opacity: 0.2;">
-
-      ${
-        item.status === "Open"
-          ? `<button class="recover-btn" style="background: #555;" onclick="markRecovered('${docId}')">Mark as Recovered</button>`
-          : `<p style="color: green;"><strong>Item Recovered</strong></p>`
-      }
+      ${item.status === "Recovered" ? `
+        <hr style="margin: 20px 0; opacity: 0.2;">
+        <p style="color: green; text-align: center;"><strong>🎉 Item Recovered</strong></p>
+      ` : ""}
 
     </div>
   `;
@@ -120,7 +121,6 @@ function handleClaimClick(question, docId, finderId) {
   document.getElementById("claimSection").style.display = "block";
 }
 
-// Updated to capture claimerContact
 async function submitClaim(docId, finderId) {
   const answer = document.getElementById("claimAnswer").value;
   const contact = document.getElementById("claimerContact").value;
@@ -137,28 +137,18 @@ async function submitClaim(docId, finderId) {
       claimerId: user.uid,
       claimerName: user.displayName,
       claimerEmail: user.email,
-      claimerContact: contact, // Saved for the finder to see
+      claimerContact: contact,
       answer: answer,
       status: "Pending",
       timestamp: Date.now()
     });
 
-    alert("Claim request sent! The finder will be notified and can see your contact info.");
+    alert("Claim request sent! Once the finder approves, the item will be marked as recovered.");
     location.reload();
   } catch (error) {
     console.error("Error submitting claim:", error);
     alert("Error sending claim request.");
   }
-}
-
-async function markRecovered(docId) {
-  if (!confirm("Mark this item as recovered?")) return;
-
-  const ref = doc(db, "items", docId);
-  await updateDoc(ref, { status: "Recovered" });
-
-  alert("Item marked as recovered!");
-  location.reload();
 }
 
 /* ============================= */
@@ -182,7 +172,6 @@ function closeImage() {
 
 loadItem();
 window.revealContact = revealContact;
-window.markRecovered = markRecovered;
 window.openImage = openImage;
 window.closeImage = closeImage;
 window.handleClaimClick = handleClaimClick;

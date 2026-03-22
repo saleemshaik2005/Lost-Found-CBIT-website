@@ -10,7 +10,7 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // 1. Query for claims where user is FINDER or CLAIMER
+  // 1. Fetch claims where the user is either the finder or the claimer
   const q = query(
     collection(db, "claims"), 
     or(
@@ -45,13 +45,13 @@ onAuthStateChanged(auth, async (user) => {
         cardContent = `
           <p><strong>Incoming Request for:</strong> <span id="title-${claimId}">Loading...</span></p>
           <p><strong>From:</strong> ${claim.claimerName}</p>
-          <p><strong>Their Answer:</strong> <span style="color: #b22222; font-weight: bold;">${claim.answer}</span></p>
-          <p><strong>Their Contact:</strong> <span style="color: #2e5e2e; font-weight: bold;">${claim.claimerContact || "Not provided"}</span></p>
+          <p><strong>Answer:</strong> <span style="color: #b22222; font-weight: bold;">${claim.answer}</span></p>
+          <p><strong>Contact:</strong> <span style="color: #2e5e2e; font-weight: bold;">${claim.claimerContact || "Not provided"}</span></p>
           <p><strong>Status:</strong> ${claim.status}</p>
           <div id="actions-${claimId}">
             ${claim.status !== "Approved" ? 
-              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn">Approve & Share My Contact</button>` : 
-              `<p style="color: green;"><strong>Approved!</strong> You shared your details with them.</p>`
+              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn">Approve & Share Details</button>` : 
+              `<p style="color: green;"><strong>Approved!</strong> Item marked as Recovered.</p>`
             }
           </div>
         `;
@@ -61,12 +61,12 @@ onAuthStateChanged(auth, async (user) => {
           <p><strong>Your Claim for:</strong> <span id="title-${claimId}">Loading...</span></p>
           <p><strong>Status:</strong> <span style="font-weight:bold; color:${claim.status === 'Approved' ? 'green' : 'orange'}">${claim.status}</span></p>
           ${claim.status === "Approved" ? 
-            `<div style="background: #e8f5e9; padding: 10px; border-radius: 5px; margin-top:10px;">
-              <p><strong>Finder's Contact Info:</strong></p>
-              <p>Email: ${claim.finderEmail}</p>
-              <p>Additional Details: ${claim.finderDetails || "No additional details provided."}</p>
+            `<div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-top:10px;">
+              <p><strong>✅ Claim Approved!</strong></p>
+              <p><strong>Finder's Email:</strong> ${claim.finderEmail}</p>
+              <p><strong>Finder's Contact:</strong> ${claim.finderDetails || "Check original post"}</p>
              </div>` : 
-            `<p>Waiting for the finder to approve your request...</p>`
+            `<p>The finder is reviewing your security answer...</p>`
           }
         `;
       }
@@ -74,7 +74,7 @@ onAuthStateChanged(auth, async (user) => {
       claimDiv.innerHTML = `<div style="padding: 15px;">${cardContent}</div>`;
       listContainer.appendChild(claimDiv);
 
-      // Fetch the Item Title
+      // Fetch Item Title
       const itemRef = doc(db, "items", claim.itemId);
       getDoc(itemRef).then(itemSnap => {
         if (itemSnap.exists()) {
@@ -82,7 +82,7 @@ onAuthStateChanged(auth, async (user) => {
         }
       });
 
-      // Mark AS SEEN if user is FINDER receiving a new request
+      // 2. MARK AS SEEN: This clears the red bubble on the Home page
       if (isFinder && claim.status === "Pending") {
         updateDoc(doc(db, "claims", claimId), { status: "Seen" });
       }
@@ -93,26 +93,34 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// Updated Approve function to share finder details
+// 3. AUTOMATED APPROVAL & RECOVERY
 window.approveClaim = async (claimId, itemId) => {
-  if (confirm("Approve this claim? Your contact details will be shared with the claimer.")) {
+  if (confirm("Approve this claim? This will share your details and mark the item as Recovered automatically.")) {
     try {
-      // Fetch the original item to get finder's contact info
-      const itemSnap = await getDoc(doc(db, "items", itemId));
-      const finderContact = itemSnap.exists() ? itemSnap.data().contact : "Check original post";
+      // Get finder's contact details from the item
+      const itemRef = doc(db, "items", itemId);
+      const itemSnap = await getDoc(itemRef);
+      const finderContact = itemSnap.exists() ? itemSnap.data().contact : "Not provided";
 
-      const ref = doc(db, "claims", claimId);
-      await updateDoc(ref, { 
+      // Update Claim document
+      const claimRef = doc(db, "claims", claimId);
+      await updateDoc(claimRef, { 
         status: "Approved",
         finderEmail: auth.currentUser.email,
-        finderDetails: finderContact // Directly sharing the info from the post
+        finderDetails: finderContact 
       });
 
-      alert("Approved! The claimer can now see your contact information.");
+      // Update Item document to RECOVERED
+      await updateDoc(itemRef, { 
+        status: "Recovered",
+        recoveredAt: Date.now() // Used for the 5-day auto-delete rule
+      });
+
+      alert("Success! Claim approved and item marked as recovered.");
       location.reload();
     } catch (error) {
       console.error("Approval error:", error);
-      alert("Error approving claim.");
+      alert("Error processing approval.");
     }
   }
 };
