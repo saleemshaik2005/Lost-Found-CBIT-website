@@ -25,11 +25,16 @@
 
   <div id="authSection">
     <button id="loginBtn" class="post-btn" style="background: #4285F4;">Login with Google</button>
-    <div id="userProfile" style="display: none; align-items: center; gap: 10px;">
-      <img id="userAvatar" src="" style="width: 35px; border-radius: 50%;">
-      <a href="post.html" class="post-btn">+ Post Item</a>
-      <button id="logoutBtn" class="back-btn" style="background: #555;">Logout</button>
-    </div>
+    <div id="userProfile" style="display: none; align-items: center; gap: 15px;">
+  <div id="notifBell" style="position: relative; cursor: pointer;">
+    <span style="font-size: 20px;">🔔</span>
+    <span id="notifCount" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px;">0</span>
+  </div>
+  
+  <img id="userAvatar" src="" style="width: 35px; border-radius: 50%;">
+  <a href="post.html" class="post-btn">+ Post Item</a>
+  <button id="logoutBtn" class="back-btn" style="background: #555;">Logout</button>
+</div>
   </div>
 </header>
 

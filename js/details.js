@@ -1,5 +1,5 @@
-import { db } from "./firebase.js";
-import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { db, auth } from "./firebase.js";
+import { collection, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ============================= */
 /* 🔹 DOM */
@@ -47,6 +47,11 @@ function renderItem(item, docId) {
       ).join("")
     : `<img src="https://via.placeholder.com/300">`;
 
+  // Determine if we show "Reveal Contact" (Lost items) or "Claim" (Found items)
+  const actionButton = (item.type === "Found") 
+    ? `<button class="reveal-btn" style="background: #2e5e2e;" onclick="handleClaimClick('${item.securityQuestion}', '${docId}', '${item.userId}')">Claim This Item</button>`
+    : `<button class="reveal-btn" onclick="revealContact()">Reveal Contact</button>`;
+
   container.innerHTML = `
     <div class="details-box">
 
@@ -63,12 +68,23 @@ function renderItem(item, docId) {
       <p><strong>Date & Time:</strong> ${new Date(item.date).toLocaleString()}</p>
       <p><strong>Posted By:</strong> ${item.username}</p>
 
-      <button class="reveal-btn" onclick="revealContact()">Reveal Contact</button>
-      <p id="contactInfo" style="display:none;">${item.contact}</p>
+      ${actionButton}
+      
+      <p id="contactInfo" style="display:none; margin-top: 10px; color: #2e5e2e; font-weight: bold;">
+        Contact: ${item.contact}
+      </p>
+
+      <div id="claimSection" style="display:none; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+        <p><strong>Question:</strong> <span id="displayQuestion"></span></p>
+        <input type="text" id="claimAnswer" placeholder="Your answer here..." style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;">
+        <button class="recover-btn" onclick="submitClaim('${docId}', '${item.userId}')">Submit Claim Request</button>
+      </div>
+
+      <hr style="margin: 20px 0; opacity: 0.2;">
 
       ${
         item.status === "Open"
-          ? `<button class="recover-btn" onclick="markRecovered('${docId}')">Mark as Recovered</button>`
+          ? `<button class="recover-btn" style="background: #555;" onclick="markRecovered('${docId}')">Mark as Recovered</button>`
           : `<p style="color: green;"><strong>Item Recovered</strong></p>`
       }
 
@@ -84,15 +100,53 @@ function revealContact() {
   document.getElementById("contactInfo").style.display = "block";
 }
 
-// 🔥 Update in Firebase
+function handleClaimClick(question, docId, finderId) {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to claim an item.");
+    return;
+  }
+  
+  if (user.uid === finderId) {
+    alert("You cannot claim your own item!");
+    return;
+  }
+
+  document.getElementById("displayQuestion").innerText = question || "No security question set by finder.";
+  document.getElementById("claimSection").style.display = "block";
+}
+
+async function submitClaim(docId, finderId) {
+  const answer = document.getElementById("claimAnswer").value;
+  const user = auth.currentUser;
+
+  if (!answer) return alert("Please provide an answer.");
+
+  try {
+    await addDoc(collection(db, "claims"), {
+      itemId: docId,
+      finderId: finderId,
+      claimerId: user.uid,
+      claimerName: user.displayName,
+      claimerEmail: user.email,
+      answer: answer,
+      status: "Pending",
+      timestamp: Date.now()
+    });
+
+    alert("Claim request sent! The finder will be notified.");
+    location.reload();
+  } catch (error) {
+    console.error("Error submitting claim:", error);
+    alert("Error sending claim request.");
+  }
+}
+
 async function markRecovered(docId) {
   if (!confirm("Mark this item as recovered?")) return;
 
   const ref = doc(db, "items", docId);
-
-  await updateDoc(ref, {
-    status: "Recovered"
-  });
+  await updateDoc(ref, { status: "Recovered" });
 
   alert("Item marked as recovered!");
   location.reload();
@@ -105,7 +159,6 @@ async function markRecovered(docId) {
 function openImage(src) {
   const modal = document.getElementById("imageModal");
   const modalImg = document.getElementById("modalImg");
-
   modal.style.display = "flex";
   modalImg.src = src;
 }
@@ -123,3 +176,5 @@ window.revealContact = revealContact;
 window.markRecovered = markRecovered;
 window.openImage = openImage;
 window.closeImage = closeImage;
+window.handleClaimClick = handleClaimClick;
+window.submitClaim = submitClaim;

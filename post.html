@@ -4,14 +4,12 @@
   <meta charset="UTF-8">
   <title>Post Item - CBIT Lost & Found</title>
 
-  <!-- Styles & Meta -->
   <link rel="stylesheet" href="css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
 
-  <!-- ================= HEADER ================= -->
   <header class="main-header">
 
     <div class="logo-section">
@@ -28,12 +26,15 @@
   </header>
 
 
-  <!-- ================= FORM ================= -->
-  <section class="form-section">
+  <div id="loadingMsg" style="text-align: center; margin-top: 50px;">
+    <p>Checking authentication...</p>
+  </div>
+
+
+  <section class="form-section" id="postFormContainer" style="display: none;">
 
     <form id="postForm">
 
-      <!-- Item Name -->
       <input 
         type="text" 
         id="title" 
@@ -41,7 +42,6 @@
         required
       >
 
-      <!-- Category -->
       <select id="category">
         <option value="">All / Not specified</option>
         <option>Electronics</option>
@@ -51,21 +51,18 @@
         <option>Other</option>
       </select>
 
-      <!-- Type -->
       <select id="type" required>
         <option value="">Type</option>
         <option value="Lost">Lost</option>
         <option value="Found">Found</option>
       </select>
 
-      <!-- Description -->
       <textarea 
         id="description" 
         placeholder="Description"
         required
       ></textarea>
 
-      <!-- Location -->
       <input 
         type="text" 
         id="location" 
@@ -73,14 +70,12 @@
         required
       >
 
-      <!-- Date & Time -->
       <input 
         type="datetime-local" 
         id="date" 
         required
       >
 
-      <!-- Image Upload -->
       <input 
         type="file" 
         id="images" 
@@ -93,10 +88,15 @@
         If LOST item → image is optional
       </p>
 
-      <!-- Image Preview -->
       <div id="imagePreview" class="preview-container"></div>
 
-      <!-- User Info -->
+      <div id="securitySection" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px; display: none;">
+        <p style="font-size: 13px; color: #2e5e2e;"><strong>Set a Security Question (for Claimers)</strong></p>
+        <p style="font-size: 11px; color: gray; margin-bottom: 5px;">This helps verify the real owner of the item.</p>
+        <input type="text" id="securityQuestion" placeholder="e.g., What color is the keychain?">
+        <input type="text" id="securityAnswer" placeholder="The correct answer">
+      </div>
+
       <input 
         type="text" 
         id="username" 
@@ -109,7 +109,6 @@
         placeholder="Contact (Phone / Email / Insta / Telegram)"
       >
 
-      <!-- Submit -->
       <button type="submit">Post Item</button>
 
     </form>
@@ -117,7 +116,6 @@
   </section>
 
 
-  <!-- ================= SCRIPTS ================= -->
   <script type="module" src="js/post.js"></script>
 
 </body>
