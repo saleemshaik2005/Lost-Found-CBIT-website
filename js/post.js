@@ -20,7 +20,6 @@ const loadingMsg = document.getElementById("loadingMsg");
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    // Show form once user is verified
     formContainer.style.display = "block";
     loadingMsg.style.display = "none";
   } else {
@@ -30,7 +29,7 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ============================= */
-/* 🔹 IMAGE HANDLING */
+/* 🔹 IMAGE HANDLING & COMPRESSION */
 /* ============================= */
 
 let imageDataArray = [];
@@ -42,6 +41,12 @@ imageInput.addEventListener("change", () => {
   const files = Array.from(imageInput.files).slice(0, 4);
 
   files.forEach(file => {
+    // Check file size (500KB limit per image for safety)
+    if (file.size > 500 * 1024) {
+      alert(`Image "${file.name}" is too large. Please use a smaller photo or a screenshot.`);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       imageDataArray.push(e.target.result);
@@ -57,7 +62,6 @@ imageInput.addEventListener("change", () => {
 /* 🔹 SECURITY SECTION TOGGLE */
 /* ============================= */
 
-// Only show security questions if the item is "Found"
 typeSelect.addEventListener("change", () => {
   if (typeSelect.value === "Found") {
     securitySection.style.display = "block";
@@ -86,7 +90,6 @@ form.addEventListener("submit", (e) => {
     return;
   }
 
-  // Create item object with Security Question data
   const item = {
     id: Date.now(),
     userId: user.uid,
@@ -116,6 +119,6 @@ form.addEventListener("submit", (e) => {
   })
   .catch(error => {
     console.error("Error posting item:", error);
-    alert("Error posting item. Ensure your images are small (under 1MB total).");
+    alert("Error posting item. Try using fewer or smaller images.");
   });
 });

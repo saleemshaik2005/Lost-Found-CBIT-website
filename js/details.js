@@ -75,9 +75,13 @@ function renderItem(item, docId) {
       </p>
 
       <div id="claimSection" style="display:none; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
-        <p><strong>Question:</strong> <span id="displayQuestion"></span></p>
-        <input type="text" id="claimAnswer" placeholder="Your answer here..." style="width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;">
-        <button class="recover-btn" onclick="submitClaim('${docId}', '${item.userId}')">Submit Claim Request</button>
+        <p><strong>Security Question:</strong> <span id="displayQuestion"></span></p>
+        
+        <input type="text" id="claimAnswer" placeholder="Your answer to the question..." style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
+        
+        <input type="text" id="claimerContact" placeholder="Your Contact (Phone / WhatsApp / Email)" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
+        
+        <button class="recover-btn" onclick="submitClaim('${docId}', '${item.userId}')">Submit Claim & Share Contact</button>
       </div>
 
       <hr style="margin: 20px 0; opacity: 0.2;">
@@ -116,11 +120,15 @@ function handleClaimClick(question, docId, finderId) {
   document.getElementById("claimSection").style.display = "block";
 }
 
+// Updated to capture claimerContact
 async function submitClaim(docId, finderId) {
   const answer = document.getElementById("claimAnswer").value;
+  const contact = document.getElementById("claimerContact").value;
   const user = auth.currentUser;
 
-  if (!answer) return alert("Please provide an answer.");
+  if (!answer || !contact) {
+    return alert("Please provide both an answer and your contact details.");
+  }
 
   try {
     await addDoc(collection(db, "claims"), {
@@ -129,12 +137,13 @@ async function submitClaim(docId, finderId) {
       claimerId: user.uid,
       claimerName: user.displayName,
       claimerEmail: user.email,
+      claimerContact: contact, // Saved for the finder to see
       answer: answer,
       status: "Pending",
       timestamp: Date.now()
     });
 
-    alert("Claim request sent! The finder will be notified.");
+    alert("Claim request sent! The finder will be notified and can see your contact info.");
     location.reload();
   } catch (error) {
     console.error("Error submitting claim:", error);

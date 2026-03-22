@@ -29,22 +29,49 @@ onAuthStateChanged(auth, (user) => {
     userAvatar.src = user.photoURL;
     localStorage.setItem("userUID", user.uid);
 
-    // 🔔 REAL-TIME NOTIFICATIONS: Listen for claims sent to this user
-    const claimsQuery = query(
+    // 🔔 NOTIFICATION 1: Listen for claims sent TO this user (Finder perspective)
+    const incomingClaimsQuery = query(
       collection(db, "claims"), 
       where("finderId", "==", user.uid),
       where("status", "==", "Pending")
     );
 
-    // Listen for real-time changes in the claims collection
-    onSnapshot(claimsQuery, (snapshot) => {
-      const count = snapshot.size;
-      if (count > 0) {
-        notifCount.innerText = count;
+    // 🔔 NOTIFICATION 2: Listen for YOUR approved claims (Claimer perspective)
+    const approvedClaimsQuery = query(
+      collection(db, "claims"),
+      where("claimerId", "==", user.uid),
+      where("status", "==", "Approved")
+    );
+
+    // Combine listeners to update the bell count
+    let incomingCount = 0;
+    let approvedCount = 0;
+
+    const updateBell = () => {
+      const total = incomingCount + approvedCount;
+      if (total > 0) {
+        notifCount.innerText = total;
         notifCount.style.display = "block";
       } else {
         notifCount.style.display = "none";
       }
+    };
+
+    onSnapshot(incomingClaimsQuery, (snapshot) => {
+      incomingCount = snapshot.size;
+      updateBell();
+    });
+
+    onSnapshot(approvedClaimsQuery, (snapshot) => {
+      // Check if a new approval just happened to trigger an alert
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added" || change.type === "modified") {
+           // Optional: You can add an alert here for immediate feedback
+           // alert("Great news! One of your claim requests was approved!");
+        }
+      });
+      approvedCount = snapshot.size;
+      updateBell();
     });
 
     // Make the notification bell clickable
