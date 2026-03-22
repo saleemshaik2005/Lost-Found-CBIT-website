@@ -1,5 +1,5 @@
 import { db, auth } from "./firebase.js";
-import { collection, query, where, getDocs, doc, updateDoc, getDoc, or } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, or, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const listContainer = document.getElementById("claimsList");
@@ -10,7 +10,8 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // 1. Fetch claims where user is either the original Poster (Finder) or the Respondent (Claimer)
+  console.log("Fetching notifications for user:", user.uid);
+
   const q = query(
     collection(db, "claims"), 
     or(
@@ -24,17 +25,24 @@ onAuthStateChanged(auth, async (user) => {
     listContainer.innerHTML = "";
 
     if (querySnapshot.empty) {
+      console.log("No claims found in database.");
       listContainer.innerHTML = "<p class='empty'>No notifications yet.</p>";
       return;
     }
 
-    // Sort notifications by newest first
-    const docs = querySnapshot.docs.sort((a, b) => b.data().timestamp - a.data().timestamp);
+    // 🔥 FIXED SORTING: Safer timestamp check
+    const sortedDocs = querySnapshot.docs.sort((a, b) => {
+      const timeA = a.data().timestamp || 0;
+      const timeB = b.data().timestamp || 0;
+      return timeB - timeA; 
+    });
 
-    for (const claimDoc of docs) {
+    console.log(`Found ${sortedDocs.length} notifications.`);
+
+    for (const claimDoc of sortedDocs) {
       const claim = claimDoc.data();
       const claimId = claimDoc.id;
-      const isPoster = claim.finderId === user.uid; // You are the one who created the item post
+      const isPoster = claim.finderId === user.uid;
 
       const claimDiv = document.createElement("div");
       claimDiv.className = "details-box"; 
@@ -42,36 +50,39 @@ onAuthStateChanged(auth, async (user) => {
       claimDiv.style.borderLeft = isPoster ? "5px solid #2e5e2e" : "5px solid #4285F4";
 
       let cardContent = "";
+      const isApproved = claim.status === "Approved" || claim.status === "Approved-Seen";
+      const isRejected = claim.status === "Rejected";
       
       if (isPoster) {
-        // --- VIEW FOR THE PERSON WHO POSTED THE ITEM ---
         cardContent = `
-          <p style="font-size: 0.8rem; color: gray;">${new Date(claim.timestamp).toLocaleString()}</p>
+          <p style="font-size: 0.8rem; color: gray;">${claim.timestamp ? new Date(claim.timestamp).toLocaleString() : 'Date unknown'}</p>
           <p><strong>Incoming Request for:</strong> <span id="title-${claimId}">Loading...</span></p>
           <p><strong>From:</strong> ${claim.claimerName}</p>
-          <p><strong>Answer Provided:</strong> <span style="color: #b22222; font-weight: bold;">${claim.answer}</span></p>
-          <p><strong>Contact shared:</strong> <span style="color: #2e5e2e; font-weight: bold;">${claim.claimerContact || "Not provided"}</span></p>
-          <p><strong>Current Status:</strong> ${claim.status}</p>
-          <div id="actions-${claimId}" style="margin-top: 10px;">
-            ${claim.status !== "Approved" ? 
-              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn">Approve & Exchange Contact</button>` : 
-              `<p style="color: green;"><strong>Approved!</strong> Item is marked as Recovered.</p>`
+          <p><strong>Answer:</strong> <span style="color: #b22222; font-weight: bold;">${claim.answer}</span></p>
+          <p><strong>Contact:</strong> <span style="color: #2e5e2e; font-weight: bold;">${claim.claimerContact || "Not provided"}</span></p>
+          <div id="actions-${claimId}" style="margin-top: 10px; display: flex; gap: 10px;">
+            ${(!isApproved && !isRejected) ? 
+              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn">Approve</button>
+               <button onclick="rejectClaim('${claimId}')" class="recover-btn" style="background: #b22222;">Reject</button>` : 
+              `<p style="color: ${isRejected ? 'red' : 'green'}; font-weight: bold;">
+                ${isRejected ? '✘ Request Rejected' : '✔ Item Recovered'}
+              </p>`
             }
           </div>
         `;
       } else {
-        // --- VIEW FOR THE PERSON RESPONDING TO A POST ---
         cardContent = `
-          <p style="font-size: 0.8rem; color: gray;">${new Date(claim.timestamp).toLocaleString()}</p>
+          <p style="font-size: 0.8rem; color: gray;">${claim.timestamp ? new Date(claim.timestamp).toLocaleString() : 'Date unknown'}</p>
           <p><strong>Your Response for:</strong> <span id="title-${claimId}">Loading...</span></p>
-          <p><strong>Status:</strong> <span style="font-weight:bold; color:${claim.status === 'Approved' ? 'green' : 'orange'}">${claim.status}</span></p>
-          ${claim.status === "Approved" ? 
+          <p><strong>Status:</strong> <span style="font-weight:bold; color:${isApproved ? 'green' : (isRejected ? 'red' : 'orange')}">${isApproved ? 'Approved' : (isRejected ? 'Rejected' : claim.status)}</span></p>
+          ${isApproved ? 
             `<div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-top:10px; border: 1px solid #c8e6c9;">
-              <p style="margin-bottom: 5px;"><strong>✅ Request Approved!</strong></p>
-              <p><strong>Poster's Email:</strong> ${claim.finderEmail}</p>
-              <p><strong>Poster's Contact Details:</strong> ${claim.finderDetails || "Please check the original post"}</p>
+              <p><strong>✅ Approved!</strong></p>
+              <p><strong>Finder's Email:</strong> ${claim.finderEmail}</p>
+              <p><strong>Finder's Contact:</strong> ${claim.finderDetails || "Check original post"}</p>
              </div>` : 
-            `<p style="color: #666;">Waiting for the poster to verify your answer...</p>`
+            (isRejected ? `<p style="color: #b22222;">Declined: Answer was incorrect.</p>` : 
+            `<p style="color: #666;">Waiting for verification...</p>`)
           }
         `;
       }
@@ -79,53 +90,42 @@ onAuthStateChanged(auth, async (user) => {
       claimDiv.innerHTML = `<div style="padding: 15px;">${cardContent}</div>`;
       listContainer.appendChild(claimDiv);
 
-      // Fetch Item Title
       const itemRef = doc(db, "items", claim.itemId);
       getDoc(itemRef).then(itemSnap => {
         if (itemSnap.exists()) {
           document.getElementById(`title-${claimId}`).innerText = itemSnap.data().title;
+        } else {
+          document.getElementById(`title-${claimId}`).innerText = "Deleted Item";
         }
       });
 
-      // Mark AS SEEN if user is the Poster receiving a new request (Clears home badge)
       if (isPoster && claim.status === "Pending") {
         updateDoc(doc(db, "claims", claimId), { status: "Seen" });
+      }
+      if (!isPoster && claim.status === "Approved") {
+        updateDoc(doc(db, "claims", claimId), { status: "Approved-Seen" });
       }
     }
   } catch (error) {
     console.error("Error loading notifications:", error);
-    listContainer.innerHTML = "<p>Error loading notifications. Please refresh.</p>";
+    listContainer.innerHTML = "<p>Error loading content. Check console (F12).</p>";
   }
 });
 
-// APPROVAL LOGIC
+// Logic for Approve/Reject buttons
 window.approveClaim = async (claimId, itemId) => {
-  if (confirm("Approve this request? This will mark the item as Recovered and share your contact details.")) {
-    try {
-      // 1. Get poster's contact info from the original item
-      const itemRef = doc(db, "items", itemId);
-      const itemSnap = await getDoc(itemRef);
-      const myContact = itemSnap.exists() ? itemSnap.data().contact : "Not provided";
+  if (confirm("Confirm approval?")) {
+    const itemSnap = await getDoc(doc(db, "items", itemId));
+    const contact = itemSnap.exists() ? itemSnap.data().contact : "Not provided";
+    await updateDoc(doc(db, "claims", claimId), { status: "Approved", finderEmail: auth.currentUser.email, finderDetails: contact });
+    await updateDoc(doc(db, "items", itemId), { status: "Recovered", recoveredAt: Date.now() });
+    location.reload();
+  }
+};
 
-      // 2. Update Claim document to 'Approved' and store contact for the respondent
-      const claimRef = doc(db, "claims", claimId);
-      await updateDoc(claimRef, { 
-        status: "Approved",
-        finderEmail: auth.currentUser.email,
-        finderDetails: myContact 
-      });
-
-      // 3. AUTOMATICALLY mark the Item as Recovered (Triggers 5-day auto-delete)
-      await updateDoc(itemRef, { 
-        status: "Recovered",
-        recoveredAt: Date.now() 
-      });
-
-      alert("Success! The item is now recovered and details have been shared.");
-      location.reload();
-    } catch (error) {
-      console.error("Approval error:", error);
-      alert("Something went wrong with the approval.");
-    }
+window.rejectClaim = async (claimId) => {
+  if (confirm("Reject this request?")) {
+    await updateDoc(doc(db, "claims", claimId), { status: "Rejected" });
+    location.reload();
   }
 };

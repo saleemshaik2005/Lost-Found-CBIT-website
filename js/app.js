@@ -28,15 +28,14 @@ onAuthStateChanged(auth, (user) => {
     userAvatar.src = user.photoURL;
     localStorage.setItem("userUID", user.uid);
 
-    // 🔔 NOTIFICATION 1: Only "Pending" claims show a dot for the Finder
+    // 🔔 NOTIFICATION 1: Pending claims for you as a Finder
     const incomingClaimsQuery = query(
       collection(db, "claims"), 
       where("finderId", "==", user.uid),
       where("status", "==", "Pending")
     );
 
-    // 🔔 NOTIFICATION 2: Approved claims show a dot for the Claimer until they view them
-    // We'll assume once they view notifications.html, they'll see the details.
+    // 🔔 NOTIFICATION 2: Approved claims for you as a Claimer
     const approvedClaimsQuery = query(
       collection(db, "claims"),
       where("claimerId", "==", user.uid),
@@ -132,11 +131,11 @@ async function loadItems() {
     if (shouldDelete) {
       deletePromises.push(deleteDoc(doc(db, "items", docId)));
     } else {
-      items.push(data);
+      // Pass the docId into the data object so card clicks work correctly
+      items.push({ ...data, docId }); 
     }
   });
 
-  // Execute all deletions
   if (deletePromises.length > 0) {
     await Promise.all(deletePromises);
   }
@@ -159,11 +158,15 @@ function displayItems(data) {
 
   data.forEach(item => {
     const isNew = (now - item.createdAt) < (24 * 60 * 60 * 1000);
-    const image = (item.images && item.images.length > 0) ? item.images[0] : "https://via.placeholder.com/300";
+    
+    // Using your local placeholder image for items without uploads
+    const image = (item.images && item.images.length > 0) 
+      ? item.images[0] 
+      : "images/placeholder.jpg"; 
 
     const card = `
       <div class="card" data-id="${item.id}">
-        <img src="${image}" alt="${item.title}">
+        <img src="${image}" alt="${item.title}" onerror="this.src='images/placeholder.png'">
         <div class="card-content">
           <span class="tag ${item.type.toLowerCase()}">${item.type}</span>
           ${item.status === "Recovered" ? '<span class="tag recovered">Recovered</span>' : ''}
@@ -243,6 +246,10 @@ function getTimeAgo(time) {
   }
   return "Just now";
 }
+
+/* ============================= */
+/* 🔹 INITIAL LOAD */
+/* ============================= */
 
 loadItems();
 window.resetFilters = resetFilters;
