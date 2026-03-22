@@ -23,7 +23,7 @@ async function loadItem() {
 
     if (data.id == selectedId) {
       foundItem = data;
-      docId = document.id; // 🔥 important for Firestore document reference
+      docId = document.id; 
     }
   });
 
@@ -47,13 +47,19 @@ function renderItem(item, docId) {
       ).join("")
     : `<img src="https://via.placeholder.com/300">`;
 
-  // Display "Claim" for Found items, "Reveal Contact" for Lost items
-  // Only show these if the item is still "Open"
+  // Bidirectional Verification Logic:
+  // Both 'Lost' and 'Found' types now hide contact info until approved.
   let actionButton = "";
   if (item.status === "Open") {
-    actionButton = (item.type === "Found") 
-      ? `<button class="reveal-btn" style="background: #2e5e2e;" onclick="handleClaimClick('${item.securityQuestion}', '${docId}', '${item.userId}')">Claim This Item</button>`
-      : `<button class="reveal-btn" onclick="revealContact()">Reveal Contact</button>`;
+    const isFoundPost = item.type === "Found";
+    const btnText = isFoundPost ? "Claim This Item" : "I Found This";
+    const btnColor = isFoundPost ? "#2e5e2e" : "#4285F4"; // Blue for finding a lost item
+    
+    actionButton = `
+      <button class="reveal-btn" style="background: ${btnColor};" 
+        onclick="handleClaimClick('${item.securityQuestion}', '${docId}', '${item.userId}', '${item.type}')">
+        ${btnText}
+      </button>`;
   }
 
   container.innerHTML = `
@@ -79,13 +85,13 @@ function renderItem(item, docId) {
       </p>
 
       <div id="claimSection" style="display:none; margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
-        <p><strong>Security Question:</strong> <span id="displayQuestion"></span></p>
+        <p><strong>Verification Question:</strong> <span id="displayQuestion"></span></p>
         
-        <input type="text" id="claimAnswer" placeholder="Your answer to the question..." style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
+        <input type="text" id="claimAnswer" placeholder="Your answer..." style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
         
-        <input type="text" id="claimerContact" placeholder="Your Contact (Phone / WhatsApp / Email)" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
+        <input type="text" id="claimerContact" placeholder="Your Contact (Phone / WhatsApp)" style="width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px;">
         
-        <button class="recover-btn" onclick="submitClaim('${docId}', '${item.userId}')">Submit Claim & Share Contact</button>
+        <button class="recover-btn" onclick="submitClaim('${docId}', '${item.userId}')">Submit & Notify Owner</button>
       </div>
 
       ${item.status === "Recovered" ? `
@@ -101,23 +107,20 @@ function renderItem(item, docId) {
 /* 🔹 ACTIONS */
 /* ============================= */
 
-function revealContact() {
-  document.getElementById("contactInfo").style.display = "block";
-}
-
-function handleClaimClick(question, docId, finderId) {
+function handleClaimClick(question, docId, finderId, type) {
   const user = auth.currentUser;
   if (!user) {
-    alert("You must be logged in to claim an item.");
+    alert("You must be logged in to proceed.");
     return;
   }
   
   if (user.uid === finderId) {
-    alert("You cannot claim your own item!");
+    alert("This is your own post!");
     return;
   }
 
-  document.getElementById("displayQuestion").innerText = question || "No security question set by finder.";
+  const defaultMsg = type === "Found" ? "No security question set by finder." : "No security question set by owner.";
+  document.getElementById("displayQuestion").innerText = question || defaultMsg;
   document.getElementById("claimSection").style.display = "block";
 }
 
@@ -143,11 +146,11 @@ async function submitClaim(docId, finderId) {
       timestamp: Date.now()
     });
 
-    alert("Claim request sent! Once the finder approves, the item will be marked as recovered.");
+    alert("Notification sent! Once the owner approves, you both will receive each other's contact details.");
     location.reload();
   } catch (error) {
     console.error("Error submitting claim:", error);
-    alert("Error sending claim request.");
+    alert("Error sending request.");
   }
 }
 
@@ -171,7 +174,6 @@ function closeImage() {
 /* ============================= */
 
 loadItem();
-window.revealContact = revealContact;
 window.openImage = openImage;
 window.closeImage = closeImage;
 window.handleClaimClick = handleClaimClick;

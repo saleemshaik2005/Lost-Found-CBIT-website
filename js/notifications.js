@@ -10,7 +10,7 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // 1. Fetch claims where the user is either the finder or the claimer
+  // 1. Fetch claims where user is either the original Poster (Finder) or the Respondent (Claimer)
   const q = query(
     collection(db, "claims"), 
     or(
@@ -28,45 +28,50 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    for (const claimDoc of querySnapshot.docs) {
+    // Sort notifications by newest first
+    const docs = querySnapshot.docs.sort((a, b) => b.data().timestamp - a.data().timestamp);
+
+    for (const claimDoc of docs) {
       const claim = claimDoc.data();
       const claimId = claimDoc.id;
-      const isFinder = claim.finderId === user.uid;
+      const isPoster = claim.finderId === user.uid; // You are the one who created the item post
 
       const claimDiv = document.createElement("div");
       claimDiv.className = "details-box"; 
       claimDiv.style.marginBottom = "20px";
-      claimDiv.style.borderLeft = isFinder ? "5px solid #2e5e2e" : "5px solid #4285F4";
+      claimDiv.style.borderLeft = isPoster ? "5px solid #2e5e2e" : "5px solid #4285F4";
 
       let cardContent = "";
       
-      if (isFinder) {
-        // --- FINDER VIEW ---
+      if (isPoster) {
+        // --- VIEW FOR THE PERSON WHO POSTED THE ITEM ---
         cardContent = `
+          <p style="font-size: 0.8rem; color: gray;">${new Date(claim.timestamp).toLocaleString()}</p>
           <p><strong>Incoming Request for:</strong> <span id="title-${claimId}">Loading...</span></p>
           <p><strong>From:</strong> ${claim.claimerName}</p>
-          <p><strong>Answer:</strong> <span style="color: #b22222; font-weight: bold;">${claim.answer}</span></p>
-          <p><strong>Contact:</strong> <span style="color: #2e5e2e; font-weight: bold;">${claim.claimerContact || "Not provided"}</span></p>
-          <p><strong>Status:</strong> ${claim.status}</p>
-          <div id="actions-${claimId}">
+          <p><strong>Answer Provided:</strong> <span style="color: #b22222; font-weight: bold;">${claim.answer}</span></p>
+          <p><strong>Contact shared:</strong> <span style="color: #2e5e2e; font-weight: bold;">${claim.claimerContact || "Not provided"}</span></p>
+          <p><strong>Current Status:</strong> ${claim.status}</p>
+          <div id="actions-${claimId}" style="margin-top: 10px;">
             ${claim.status !== "Approved" ? 
-              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn">Approve & Share Details</button>` : 
-              `<p style="color: green;"><strong>Approved!</strong> Item marked as Recovered.</p>`
+              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn">Approve & Exchange Contact</button>` : 
+              `<p style="color: green;"><strong>Approved!</strong> Item is marked as Recovered.</p>`
             }
           </div>
         `;
       } else {
-        // --- CLAIMER VIEW ---
+        // --- VIEW FOR THE PERSON RESPONDING TO A POST ---
         cardContent = `
-          <p><strong>Your Claim for:</strong> <span id="title-${claimId}">Loading...</span></p>
+          <p style="font-size: 0.8rem; color: gray;">${new Date(claim.timestamp).toLocaleString()}</p>
+          <p><strong>Your Response for:</strong> <span id="title-${claimId}">Loading...</span></p>
           <p><strong>Status:</strong> <span style="font-weight:bold; color:${claim.status === 'Approved' ? 'green' : 'orange'}">${claim.status}</span></p>
           ${claim.status === "Approved" ? 
-            `<div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-top:10px;">
-              <p><strong>✅ Claim Approved!</strong></p>
-              <p><strong>Finder's Email:</strong> ${claim.finderEmail}</p>
-              <p><strong>Finder's Contact:</strong> ${claim.finderDetails || "Check original post"}</p>
+            `<div style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-top:10px; border: 1px solid #c8e6c9;">
+              <p style="margin-bottom: 5px;"><strong>✅ Request Approved!</strong></p>
+              <p><strong>Poster's Email:</strong> ${claim.finderEmail}</p>
+              <p><strong>Poster's Contact Details:</strong> ${claim.finderDetails || "Please check the original post"}</p>
              </div>` : 
-            `<p>The finder is reviewing your security answer...</p>`
+            `<p style="color: #666;">Waiting for the poster to verify your answer...</p>`
           }
         `;
       }
@@ -82,45 +87,45 @@ onAuthStateChanged(auth, async (user) => {
         }
       });
 
-      // 2. MARK AS SEEN: This clears the red bubble on the Home page
-      if (isFinder && claim.status === "Pending") {
+      // Mark AS SEEN if user is the Poster receiving a new request (Clears home badge)
+      if (isPoster && claim.status === "Pending") {
         updateDoc(doc(db, "claims", claimId), { status: "Seen" });
       }
     }
   } catch (error) {
-    console.error("Error:", error);
-    listContainer.innerHTML = "<p>Error loading notifications.</p>";
+    console.error("Error loading notifications:", error);
+    listContainer.innerHTML = "<p>Error loading notifications. Please refresh.</p>";
   }
 });
 
-// 3. AUTOMATED APPROVAL & RECOVERY
+// APPROVAL LOGIC
 window.approveClaim = async (claimId, itemId) => {
-  if (confirm("Approve this claim? This will share your details and mark the item as Recovered automatically.")) {
+  if (confirm("Approve this request? This will mark the item as Recovered and share your contact details.")) {
     try {
-      // Get finder's contact details from the item
+      // 1. Get poster's contact info from the original item
       const itemRef = doc(db, "items", itemId);
       const itemSnap = await getDoc(itemRef);
-      const finderContact = itemSnap.exists() ? itemSnap.data().contact : "Not provided";
+      const myContact = itemSnap.exists() ? itemSnap.data().contact : "Not provided";
 
-      // Update Claim document
+      // 2. Update Claim document to 'Approved' and store contact for the respondent
       const claimRef = doc(db, "claims", claimId);
       await updateDoc(claimRef, { 
         status: "Approved",
         finderEmail: auth.currentUser.email,
-        finderDetails: finderContact 
+        finderDetails: myContact 
       });
 
-      // Update Item document to RECOVERED
+      // 3. AUTOMATICALLY mark the Item as Recovered (Triggers 5-day auto-delete)
       await updateDoc(itemRef, { 
         status: "Recovered",
-        recoveredAt: Date.now() // Used for the 5-day auto-delete rule
+        recoveredAt: Date.now() 
       });
 
-      alert("Success! Claim approved and item marked as recovered.");
+      alert("Success! The item is now recovered and details have been shared.");
       location.reload();
     } catch (error) {
       console.error("Approval error:", error);
-      alert("Error processing approval.");
+      alert("Something went wrong with the approval.");
     }
   }
 };

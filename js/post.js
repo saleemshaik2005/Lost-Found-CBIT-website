@@ -41,7 +41,6 @@ imageInput.addEventListener("change", () => {
   const files = Array.from(imageInput.files).slice(0, 4);
 
   files.forEach(file => {
-    // Check file size (500KB limit per image for safety)
     if (file.size > 500 * 1024) {
       alert(`Image "${file.name}" is too large. Please use a smaller photo or a screenshot.`);
       return;
@@ -63,8 +62,18 @@ imageInput.addEventListener("change", () => {
 /* ============================= */
 
 typeSelect.addEventListener("change", () => {
-  if (typeSelect.value === "Found") {
+  const value = typeSelect.value;
+  const securityLabel = securitySection.querySelector('p');
+
+  if (value === "Found" || value === "Lost") {
     securitySection.style.display = "block";
+    
+    // Update label text dynamically based on the type
+    if (value === "Lost") {
+      securityLabel.innerHTML = "<strong>Set a Security Question (for the person who finds it)</strong><br><small style='color: gray;'>Ask something specific only the finder would see (e.g., 'What color is the internal zipper?')</small>";
+    } else {
+      securityLabel.innerHTML = "<strong>Set a Security Question (for the owner)</strong><br><small style='color: gray;'>Ask something only the real owner would know.</small>";
+    }
   } else {
     securitySection.style.display = "none";
   }
@@ -104,7 +113,7 @@ form.addEventListener("submit", (e) => {
     images: imageDataArray,
     contact: document.getElementById("contact").value || "Not provided",
     
-    // Security fields for the Claim System
+    // Security fields are now captured for both Lost and Found
     securityQuestion: document.getElementById("securityQuestion").value || "",
     securityAnswer: document.getElementById("securityAnswer").value || "",
     
