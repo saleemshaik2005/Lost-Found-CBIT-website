@@ -22,14 +22,12 @@ const dropdownMenu = document.getElementById("dropdownMenu");
 /* 🔹 DROPDOWN LOGIC */
 /* ============================= */
 
-// Function to show/hide the profile menu
 function toggleDropdown() {
   if (dropdownMenu) {
     dropdownMenu.classList.toggle("show");
   }
 }
 
-// Close the dropdown if the user clicks outside of it
 window.onclick = function(event) {
   if (!event.target.matches('#userAvatar')) {
     if (dropdownMenu && dropdownMenu.classList.contains('show')) {
@@ -46,17 +44,21 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     loginBtn.style.display = "none";
     userProfile.style.display = "flex";
-    userAvatar.src = user.photoURL;
+    
+    // ✅ SAFE AVATAR LOGIC
+    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=2e5e2e&color=fff`;
+    userAvatar.src = user.photoURL || defaultAvatar;
+    userAvatar.onerror = function() { this.src = defaultAvatar; };
+
     localStorage.setItem("userUID", user.uid);
 
-    // 🔔 Incoming claims for you as a Finder
+    // 🔔 Notifications Logic
     const incomingClaimsQuery = query(
       collection(db, "claims"), 
       where("finderId", "==", user.uid),
       where("status", "==", "Pending")
     );
 
-    // 🔔 Approved claims for you as a Claimer
     const approvedClaimsQuery = query(
       collection(db, "claims"),
       where("claimerId", "==", user.uid),
@@ -114,15 +116,11 @@ loginBtn.addEventListener("click", async () => {
 logoutBtn.addEventListener("click", () => signOut(auth));
 
 /* ============================= */
-/* 🔹 GLOBAL DATA */
+/* 🔹 GLOBAL DATA & LOAD */
 /* ============================= */
 
 let items = [];
 const now = Date.now();
-
-/* ============================= */
-/* 🔹 LOAD ITEMS & AUTO-DELETE LOGIC */
-/* ============================= */
 
 async function loadItems() {
   const querySnapshot = await getDocs(collection(db, "items"));
@@ -135,16 +133,10 @@ async function loadItems() {
     const ageInDays = (now - data.createdAt) / (1000 * 60 * 60 * 24);
 
     let shouldDelete = false;
-
-    if (data.status !== "Recovered" && ageInDays >= 10) {
-      shouldDelete = true;
-    }
-
+    if (data.status !== "Recovered" && ageInDays >= 10) shouldDelete = true;
     if (data.status === "Recovered" && data.recoveredAt) {
       const recoveredAge = (now - data.recoveredAt) / (1000 * 60 * 60 * 24);
-      if (recoveredAge >= 5) {
-        shouldDelete = true;
-      }
+      if (recoveredAge >= 5) shouldDelete = true;
     }
 
     if (shouldDelete) {
@@ -154,16 +146,14 @@ async function loadItems() {
     }
   });
 
-  if (deletePromises.length > 0) {
-    await Promise.all(deletePromises);
-  }
+  if (deletePromises.length > 0) await Promise.all(deletePromises);
 
   items.sort((a, b) => b.createdAt - a.createdAt);
   displayItems(items);
 }
 
 /* ============================= */
-/* 🔹 DISPLAY ITEMS */
+/* 🔹 DISPLAY & FILTER */
 /* ============================= */
 
 function displayItems(data) {
@@ -176,10 +166,7 @@ function displayItems(data) {
 
   data.forEach(item => {
     const isNew = (now - item.createdAt) < (24 * 60 * 60 * 1000);
-    
-    const image = (item.images && item.images.length > 0) 
-      ? item.images[0] 
-      : "images/placeholder.jpg"; 
+    const image = (item.images && item.images.length > 0) ? item.images[0] : "images/placeholder.jpg"; 
 
     const card = `
       <div class="card" data-id="${item.docId}">
@@ -197,6 +184,7 @@ function displayItems(data) {
     container.innerHTML += card;
   });
 
+  // Re-attach listeners to the fresh cards
   document.querySelectorAll(".card").forEach(card => {
     card.addEventListener("click", () => {
       const docId = card.getAttribute("data-id");
@@ -204,10 +192,6 @@ function displayItems(data) {
     });
   });
 }
-
-/* ============================= */
-/* 🔹 FILTER LOGIC */
-/* ============================= */
 
 function applyFilters() {
   let filtered = [...items];
@@ -229,12 +213,8 @@ function applyFilters() {
   displayItems(filtered);
 }
 
-searchInput.addEventListener("input", applyFilters);
-categoryFilter.addEventListener("change", applyFilters);
-typeFilter.addEventListener("change", applyFilters);
-
 /* ============================= */
-/* 🔹 ACTIONS */
+/* 🔹 HELPER FUNCTIONS */
 /* ============================= */
 
 function openDetails(docId) {
@@ -259,15 +239,18 @@ function getTimeAgo(time) {
 
   for (let i of intervals) {
     const count = Math.floor(seconds / i.value);
-    if (count > 0) return `Posted ${count} ${i.label}${count > 1 ? "s" : ""} ago`;
+    if (count > 0) return `${count} ${i.label}${count > 1 ? "s" : ""} ago`;
   }
   return "Just now";
 }
 
 /* ============================= */
-/* 🔹 INITIAL LOAD */
+/* 🔹 INITIALIZE */
 /* ============================= */
 
 loadItems();
+searchInput.addEventListener("input", applyFilters);
+categoryFilter.addEventListener("change", applyFilters);
+typeFilter.addEventListener("change", applyFilters);
 window.resetFilters = resetFilters;
 window.toggleDropdown = toggleDropdown;

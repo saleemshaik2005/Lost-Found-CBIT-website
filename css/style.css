@@ -68,13 +68,20 @@ html {
 }
 
 /* 🔥 AVATAR BORDER (Added) */
+/* Update your existing #userAvatar or add this */
 #userAvatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid white; /* Prevents merging into header */
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   object-fit: cover;
+  background-color: #ddd; /* Gray background for missing photos */
+  border: 2px solid white;
+}
+
+/* New: Hide the "User Profile" text if the image is broken */
+.profile-dropdown img {
+  color: transparent;
+  text-indent: -10000px;
 }
 
 .post-btn {
