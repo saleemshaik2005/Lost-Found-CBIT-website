@@ -61,6 +61,8 @@ html {
   border-radius: 6px;
   transition: 0.2s;
   font-weight: bold;
+  border: none;
+  cursor: pointer;
 }
 
 .post-btn:hover {
@@ -148,6 +150,7 @@ html {
   padding: 8px;
   border-radius: 5px;
   border: 1px solid #ccc;
+  cursor: pointer;
 }
 
 
@@ -175,6 +178,7 @@ html {
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .card:hover {
@@ -240,12 +244,14 @@ html {
   width: 100%;
   max-width: 200px;
   border-radius: 8px;
+  cursor: pointer;
 }
 
 .details-box {
   background: white;
   padding: 15px;
   border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .reveal-btn {
@@ -323,36 +329,82 @@ form button {
 
 
 /* ============================= */
-/* 📌 FOOTER */
+/* 📌 PROFESSIONAL FOOTER */
 /* ============================= */
 
-footer {
-  background: #1f3f1f;
-  color: white;
-  padding: 25px 10px;
-  text-align: center;
-  margin-top: 40px;
+.footer-section {
+    background-color: #1a3a1a; 
+    color: white;
+    padding: 40px 20px 10px;
+    margin-top: 50px;
+    text-align: left; /* Reset from global text-center if needed */
 }
 
-.footer-content h3 {
-  margin: 0;
+.footer-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 30px;
 }
 
-.footer-content p {
-  margin: 5px 0;
-  font-size: 14px;
+.footer-about h3 {
+    color: #ffd700; /* Gold */
+    margin: 0 0 10px 0;
 }
 
-.footer-note {
-  margin-top: 10px;
-  font-size: 12px;
-  opacity: 0.7;
+.footer-about p {
+    font-style: italic;
+    font-size: 0.95rem;
+    margin: 0 0 5px 0;
 }
 
-.empty {
-  text-align: center;
-  color: #777;
-  margin-top: 40px;
+.project-info {
+    font-style: normal !important;
+    opacity: 0.7;
+    font-size: 0.85rem !important;
+}
+
+.footer-contact h4 {
+    margin: 0 0 15px 0;
+    color: #fff;
+}
+
+.footer-socials {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.social-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.github { background-color: #333; }
+.linkedin { background-color: #0077b5; }
+
+.social-icon:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.2);
+}
+
+.footer-bottom {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.8rem;
+    opacity: 0.6;
 }
 
 
@@ -361,8 +413,6 @@ footer {
 /* ============================= */
 
 @media (max-width: 768px) {
-
-  /* Header */
   .main-header {
     flex-direction: column;
     align-items: flex-start;
@@ -381,7 +431,6 @@ footer {
     align-self: flex-end;
   }
 
-  /* Hero */
   .hero {
     height: 220px;
   }
@@ -390,11 +439,6 @@ footer {
     font-size: 22px;
   }
 
-  .hero-overlay p {
-    font-size: 13px;
-  }
-
-  /* Search */
   .search-section {
     flex-direction: column;
     width: 95%;
@@ -407,32 +451,22 @@ footer {
     width: 100%;
   }
 
-  /* Cards */
   .items-container {
     grid-template-columns: 1fr;
   }
 
-  /* Form */
-  .form-section {
-    padding: 15px;
-    width: 95%;
+  .footer-container {
+      flex-direction: column;
+      text-align: center;
   }
-
-  form input,
-  form select,
-  form textarea,
-  form button {
-    width: 100%;
+  
+  .footer-socials {
+      justify-content: center;
   }
-
-  /* Details */
-  .details-images img {
-    max-width: 100%;
-  }
-
 }
+
 .back-btn {
-  background: #b22222; /* CBIT red */
+  background: #b22222; 
   color: white;
   padding: 6px 12px;
   border-radius: 5px;
@@ -440,11 +474,14 @@ footer {
   font-size: 14px;
   transition: 0.2s;
   margin-left: 10px;
+  border: none;
+  cursor: pointer;
 }
 
 .back-btn:hover {
   background: #8b1a1a;
 }
+
 .image-modal {
   display: none;
   position: fixed;
@@ -453,10 +490,8 @@ footer {
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.9);
-
   justify-content: center;
   align-items: center;
-
   z-index: 2000;
 }
 
@@ -465,4 +500,45 @@ footer {
   max-height: 90%;
   border-radius: 10px;
   cursor: zoom-out;
+}
+/* ============================= */
+/* 🛡️ SECURITY & FORM ENHANCEMENTS */
+/* ============================= */
+
+.warning-box {
+  background: #fff4f4;
+  border: 1px solid #f5c2c2;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  color: #a94442;
+}
+
+.warning-box ul {
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+.agreement-section {
+  margin: 15px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* Fix for checkboxes to prevent them from stretching */
+.agreement-section input[type="checkbox"] {
+  width: 18px !important; /* Overrides global input width */
+  height: 18px !important;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.agreement-label {
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  line-height: 1.4;
+  user-select: none;
 }

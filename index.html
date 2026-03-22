@@ -2,47 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CBIT Lost & Found</title>
+  <title>CBIT Lost & Found | Saleem Shaik</title>
 
-  <!-- Styles & Meta -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
 
-  <!-- ================= HEADER ================= -->
   <header class="main-header">
-  <div class="logo-section">
-    <img src="images/logo.png" alt="CBIT Logo">
-  </div>
+    <div class="logo-section">
+      <img src="images/logo.png" alt="CBIT Logo">
+    </div>
 
-  <div class="title-section">
-    <h1>Lost & Found Portal</h1>
-    <p>Chaitanya Bharathi Institute of Technology</p>
-  </div>
+    <div class="title-section">
+      <h1>Lost & Found Portal</h1>
+      <p>Chaitanya Bharathi Institute of Technology</p>
+    </div>
 
-  <div id="authSection">
-    <button id="loginBtn" class="post-btn" style="background: #4285F4;">Login with Google</button>
-    <div id="userProfile" style="display: none; align-items: center; gap: 15px;">
-  <div id="notifBell" style="position: relative; cursor: pointer;">
-    <span style="font-size: 20px;">🔔</span>
-    <span id="notifCount" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px;">0</span>
-  </div>
-  
-  <img id="userAvatar" src="" style="width: 35px; border-radius: 50%;">
-  <a href="post.html" class="post-btn">+ Post Item</a>
-  <button id="logoutBtn" class="back-btn" style="background: #555;">Logout</button>
-</div>
-  </div>
-</header>
+    <div id="authSection">
+      <button id="loginBtn" class="post-btn" style="background: #4285F4;">Login with Google</button>
+      
+      <div id="userProfile" style="display: none; align-items: center; gap: 15px;">
+        <div id="notifBell" style="position: relative; cursor: pointer;">
+          <span style="font-size: 20px;">🔔</span>
+          <span id="notifCount" style="display: none; position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px;">0</span>
+        </div>
+        
+        <img id="userAvatar" src="" style="width: 35px; border-radius: 50%;">
+        <a href="post.html" class="post-btn">+ Post Item</a>
+        <button id="logoutBtn" class="back-btn" style="background: #555;">Logout</button>
+      </div>
+    </div>
+  </header>
 
-  <!-- Accent line -->
   <div class="accent-line"></div>
 
 
-  <!-- ================= HERO SECTION ================= -->
   <section class="hero">
     <div class="hero-overlay">
       <h1>CBIT Lost & Found</h1>
@@ -51,9 +50,7 @@
   </section>
 
 
-  <!-- ================= SEARCH & FILTER ================= -->
   <section class="search-section">
-
     <input 
       type="text" 
       id="searchInput" 
@@ -75,27 +72,44 @@
     </select>
 
     <button onclick="resetFilters()">Reset</button>
-
   </section>
 
 
-  <!-- ================= ITEMS LIST ================= -->
   <section id="itemsContainer" class="items-container">
-    <!-- Items will be dynamically inserted here -->
-  </section>
+    </section>
 
 
-  <!-- ================= FOOTER ================= -->
-  <footer>
-    <div class="footer-content">
-      <h3>CBIT Lost & Found Portal</h3>
-      <p>Helping students recover lost items across campus</p>
-      <p class="footer-note">Developed by Saleem</p>
+  <footer class="footer-section">
+    <div class="footer-container">
+        <div class="footer-about">
+            <h3>Lost & Found CBIT</h3>
+            <p>"Building simple tools that make life easier"</p>
+            <p class="project-info">Helping our campus community reconnect with lost belongings.</p>
+        </div>
+
+        <div class="footer-contact">
+            <h4>Let's Connect</h4>
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">🚀 Open to Internships & Collaborations</p>
+            <div class="footer-socials">
+                <a href="https://github.com/saleemshaik2005" target="_blank" class="social-icon github">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <a href="https://www.linkedin.com/in/saleemshaikatcbit/" target="_blank" class="social-icon linkedin">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-bottom">
+        <p>&copy; 2026 | Handcrafted by <strong>Saleem Shaik</strong></p>
+        <p style="font-size: 0.7rem; opacity: 0.5; margin-top: 5px; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Disclaimer: This is an independent student project and is not officially affiliated with or endorsed by CBIT administration.
+        </p>
     </div>
   </footer>
 
 
-  <!-- ================= SCRIPTS ================= -->
   <script type="module" src="js/app.js"></script>
 
 </body>

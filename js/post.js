@@ -13,6 +13,7 @@ const typeSelect = document.getElementById("type");
 const securitySection = document.getElementById("securitySection");
 const formContainer = document.getElementById("postFormContainer");
 const loadingMsg = document.getElementById("loadingMsg");
+const agreeCheckbox = document.getElementById("guidelineAgree"); // 🔥 NEW
 
 /* ============================= */
 /* 🔹 AUTH CHECK */
@@ -68,7 +69,6 @@ typeSelect.addEventListener("change", () => {
   if (value === "Found" || value === "Lost") {
     securitySection.style.display = "block";
     
-    // Update label text dynamically based on the type
     if (value === "Lost") {
       securityLabel.innerHTML = "<strong>Set a Security Question (for the person who finds it)</strong><br><small style='color: gray;'>Ask something specific only the finder would see (e.g., 'What color is the internal zipper?')</small>";
     } else {
@@ -86,6 +86,12 @@ typeSelect.addEventListener("change", () => {
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   
+  // 🔥 NEW: Guideline Validation
+  if (!agreeCheckbox.checked) {
+    alert("Please check the box to agree to the community guidelines before posting.");
+    return;
+  }
+
   const user = auth.currentUser;
   if (!user) {
     alert("Session expired. Please log in again.");
@@ -100,7 +106,6 @@ form.addEventListener("submit", (e) => {
   }
 
   const item = {
-    id: Date.now(),
     userId: user.uid,
     userEmail: user.email,
     username: user.displayName || document.getElementById("username").value || "Anonymous",
@@ -112,11 +117,8 @@ form.addEventListener("submit", (e) => {
     date: document.getElementById("date").value,
     images: imageDataArray,
     contact: document.getElementById("contact").value || "Not provided",
-    
-    // Security fields are now captured for both Lost and Found
     securityQuestion: document.getElementById("securityQuestion").value || "",
     securityAnswer: document.getElementById("securityAnswer").value || "",
-    
     status: "Open",
     createdAt: Date.now()
   };
