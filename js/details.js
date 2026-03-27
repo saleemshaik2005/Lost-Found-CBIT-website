@@ -3,8 +3,15 @@ import { doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebas
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ============================= */
-/* 🔹 DOM */
+/* 📧 EMAILJS CONFIGURATION */
 /* ============================= */
+const EMAILJS_PUBLIC_KEY = "gox8-M_8m00ruwTba"; 
+const EMAILJS_SERVICE_ID = "service_ob7fy6p"; 
+const EMAILJS_TEMPLATE_ID = "template_ymgde7i"; 
+
+// Initialize EmailJS
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
 const container = document.getElementById("detailsContainer");
 const selectedId = localStorage.getItem("selectedItemId");
 
@@ -58,6 +65,8 @@ function renderItem(item, docId) {
       </button>`;
   }
 
+  // 🛡️ SECURITY: item.contact is NOT rendered here at all.
+  // It is only accessible to the approved person via the Notifications tab.
   container.innerHTML = `
     <div class="details-box">
       <div class="details-images">
@@ -84,12 +93,12 @@ function renderItem(item, docId) {
         </button>
       </div>
 
-
       <div id="claimSection" style="display:none; margin-top: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa;">
-        <p><strong>Security Question:</strong> <span id="displayQuestion"></span></p>
+        <p style="color: #2e5e2e; font-weight: bold; margin-bottom: 10px;">Verification Step</p>
+        <p><strong>Question:</strong> <span id="displayQuestion"></span></p>
         <input type="text" id="claimAnswer" placeholder="Your answer here..." style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;">
         <input type="text" id="claimerContact" placeholder="Your Phone / WhatsApp" style="width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px;">
-        <button class="recover-btn" style="width: 100%;" onclick="submitClaim('${docId}', '${item.userId}')">Submit & Request Approval</button>
+        <button id="submitClaimBtn" class="recover-btn" style="width: 100%;" onclick="submitClaim('${docId}', '${item.userId}')">Submit & Notify Finder</button>
       </div>
 
       ${item.status === "Recovered" ? `
@@ -116,7 +125,7 @@ function handleClaimClick(question, docId, posterId, type) {
     return;
   }
 
-  const defaultMsg = type === "Found" ? "Describe the item accurately." : "Please verify your claim below.";
+  const defaultMsg = type === "Found" ? "Describe the item accurately to prove ownership." : "Please answer the finder's question to verify.";
   document.getElementById("displayQuestion").innerText = question || defaultMsg;
   document.getElementById("claimSection").style.display = "block";
   document.getElementById("claimSection").scrollIntoView({ behavior: 'smooth' });
@@ -127,9 +136,18 @@ async function submitClaim(docId, posterId) {
   const contact = document.getElementById("claimerContact").value.trim();
   const user = auth.currentUser;
 
-  if (!answer || !contact) return alert("Fill all fields.");
+  if (!answer || !contact) return alert("Please provide both an answer and your contact info.");
+
+  const btn = document.getElementById("submitClaimBtn");
+  btn.disabled = true;
+  btn.innerText = "Sending Notification...";
 
   try {
+    // 1. Fetch item owner's email
+    const itemSnap = await getDoc(doc(db, "items", docId));
+    const itemData = itemSnap.data();
+
+    // 2. Save Claim to Firestore
     await addDoc(collection(db, "claims"), {
       itemId: docId,
       finderId: posterId,
@@ -141,11 +159,26 @@ async function submitClaim(docId, posterId) {
       status: "Pending",
       timestamp: Date.now()
     });
-    alert("Request sent!");
+
+    // 3. 📧 SEND EMAIL via EmailJS
+    const templateParams = {
+      finder_name: itemData.username,
+      item_title: itemData.title,
+      claim_answer: answer,
+      to_email: itemData.userEmail,
+      portal_link: "https://cbit-lost-found.web.app", // Update this after deployment
+      dev_linkedin: "https://www.linkedin.com/in/saleemshaikatcbit/"
+    };
+
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+
+    alert("Your claim request has been sent! The finder has been notified via email.");
     location.reload();
   } catch (error) {
     console.error("Error submitting claim:", error);
     alert("Error sending request.");
+    btn.disabled = false;
+    btn.innerText = "Submit & Notify Finder";
   }
 }
 
