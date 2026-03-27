@@ -3,7 +3,7 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, deleteDoc } from "
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ============================= */
-/* 🔹 SECURITY CONFIG */
+/* 🛡️ SECURITY CONFIG */
 /* ============================= */
 const ADMIN_EMAIL = "saleemshaik2005@gmail.com"; 
 
@@ -18,25 +18,31 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ============================= */
-/* 🔹 DASHBOARD ANALYTICS */
+/* 📊 DASHBOARD ANALYTICS */
 /* ============================= */
 async function loadStats() {
   try {
-    const posts = await getDocs(collection(db, "items"));
-    const users = await getDocs(collection(db, "users"));
-    const reports = await getDocs(collection(db, "reports"));
+    const [posts, users, reports] = await Promise.all([
+      getDocs(collection(db, "items")),
+      getDocs(collection(db, "users")),
+      getDocs(collection(db, "reports"))
+    ]);
     
     // Update the metric boxes in admin.html
-    if (document.getElementById("totalPosts")) document.getElementById("totalPosts").innerText = posts.size;
-    if (document.getElementById("totalUsers")) document.getElementById("totalUsers").innerText = users.size;
-    if (document.getElementById("totalClaims")) document.getElementById("totalClaims").innerText = reports.size; 
+    const totalPostsEl = document.getElementById("totalPosts");
+    const totalUsersEl = document.getElementById("totalUsers");
+    const totalClaimsEl = document.getElementById("totalClaims");
+
+    if (totalPostsEl) totalPostsEl.innerText = posts.size;
+    if (totalUsersEl) totalUsersEl.innerText = users.size;
+    if (totalClaimsEl) totalClaimsEl.innerText = reports.size; 
   } catch (error) {
     console.error("Error loading dashboard stats:", error);
   }
 }
 
 /* ============================= */
-/* 🔹 NAVIGATION & VIEW LOGIC */
+/* 🧭 NAVIGATION & VIEW LOGIC */
 /* ============================= */
 window.switchTab = async (tab) => {
   const content = document.getElementById("adminContent");
@@ -59,7 +65,7 @@ window.switchTab = async (tab) => {
           <tr style='border-bottom:1px solid #eee;'>
             <td style='padding:10px;'>${item.title}</td>
             <td>${item.username || 'Anonymous'}</td>
-            <td><span class="tag ${item.status.toLowerCase()}">${item.status}</span></td>
+            <td><span class="tag ${item.status ? item.status.toLowerCase() : 'open'}">${item.status || 'Open'}</span></td>
             <td>
               <button onclick="adminDeletePost('${docSnap.id}')" style='color:#b22222; border:none; background:none; cursor:pointer; font-size:16px;'>
                 <i class='fas fa-trash'></i>
@@ -83,7 +89,7 @@ window.switchTab = async (tab) => {
         const isBanned = u.isBanned || false;
         html += `
           <tr style='border-bottom:1px solid #eee;'>
-            <td style='padding:10px;'><strong>${u.displayName}</strong><br><small>${u.rollNumber || 'No Roll'}</small></td>
+            <td style='padding:10px;'><strong>${u.displayName || 'CBIT Student'}</strong><br><small>${u.rollNumber || 'No Roll'}</small></td>
             <td>${u.email}</td>
             <td style="color: ${isBanned ? '#b22222' : '#2e5e2e'}; font-weight: bold;">
               ${isBanned ? 'RESTRICTED' : 'ACTIVE'}
@@ -129,18 +135,17 @@ window.switchTab = async (tab) => {
 };
 
 /* ============================= */
-/* 🔹 MODERATION ACTIONS */
+/* 🛠️ MODERATION ACTIONS */
 /* ============================= */
 
 window.adminDeletePost = async (itemId, reportId = null) => {
   if (confirm("ADMIN ACTION: Permanently delete this post and all associated data?")) {
     try {
       await deleteDoc(doc(db, "items", itemId));
-      // If deleting from reports tab, clean up the report document too
       if (reportId) await deleteDoc(doc(db, "reports", reportId));
       
       alert("Post removed successfully.");
-      loadStats();
+      await loadStats();
       switchTab(reportId ? 'reports' : 'posts');
     } catch (error) {
       console.error("Delete error:", error);
@@ -167,7 +172,7 @@ window.dismissReport = async (reportId) => {
   if (confirm("Dismiss this report? The post will remain active.")) {
     try {
       await deleteDoc(doc(db, "reports", reportId));
-      loadStats();
+      await loadStats();
       switchTab('reports');
     } catch (error) {
       console.error("Dismiss report error:", error);

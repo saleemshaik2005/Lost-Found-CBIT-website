@@ -6,6 +6,8 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/f
 /* 🔹 CONFIGURATION */
 /* ============================= */
 const DAILY_POST_LIMIT = 2; 
+const CLOUD_NAME = "dq17ske9m";
+const UPLOAD_PRESET = "cbitlostandfound_preset";
 
 /* ============================= */
 /* 🔹 DOM ELEMENTS */
@@ -24,8 +26,8 @@ const agreeCheckbox = document.getElementById("guidelineAgree");
 /* ============================= */
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    formContainer.style.display = "block";
-    loadingMsg.style.display = "none";
+    if (formContainer) formContainer.style.display = "block";
+    if (loadingMsg) loadingMsg.style.display = "none";
   } else {
     alert("You must be logged in to post an item.");
     window.location.href = "index.html";
@@ -33,55 +35,19 @@ onAuthStateChanged(auth, (user) => {
 });
 
 /* ============================= */
-/* 🔹 FAST IMAGE HANDLING & COMPRESSION */
+/* 🔹 IMAGE PREVIEW LOGIC */
 /* ============================= */
-let imageDataArray = [];
-
 imageInput.addEventListener("change", () => {
   previewContainer.innerHTML = "";
-  imageDataArray = [];
   const files = Array.from(imageInput.files).slice(0, 4);
 
   files.forEach((file) => {
-    // 🛑 BLOCK HEIC: Quickly alert the user to use a screenshot instead
-    if (file.name.toLowerCase().endsWith(".heic") || file.type === "image/heic") {
-      alert("iPhone HEIC photos are too slow to process. Please take a screenshot of your photo and upload that instead—it will work instantly!");
-      return;
-    }
-
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 800; // Fast, web-friendly size
-        let width = img.width;
-        let height = img.height;
-
-        if (width > MAX_WIDTH) {
-          height *= MAX_WIDTH / width;
-          width = MAX_WIDTH;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Instant compression to JPEG string
-        const compressedData = canvas.toDataURL("image/jpeg", 0.7);
-        imageDataArray.push(compressedData);
-
-        const previewImg = document.createElement("img");
-        previewImg.src = compressedData;
-        previewImg.style.width = "75px";
-        previewImg.style.height = "75px";
-        previewImg.style.objectFit = "cover";
-        previewImg.style.borderRadius = "8px";
-        previewImg.style.marginRight = "10px";
-        previewContainer.appendChild(previewImg);
-      };
+      const previewImg = document.createElement("img");
+      previewImg.src = e.target.result;
+      previewImg.style = "width:75px; height:75px; object-fit:cover; border-radius:8px; margin-right:10px;";
+      previewContainer.appendChild(previewImg);
     };
     reader.readAsDataURL(file);
   });
@@ -96,9 +62,9 @@ typeSelect.addEventListener("change", () => {
   if (value === "Found" || value === "Lost") {
     securitySection.style.display = "block";
     if (value === "Lost") {
-      securityLabel.innerHTML = "<strong>Set a Security Question (for the finder)</strong><br><small style='color: gray;'>Ask about a detail only the finder would see.</small>";
+      securityLabel.innerHTML = "<strong>Security Question (for the finder)</strong><br><small>Ask a detail only the finder would see.</small>";
     } else {
-      securityLabel.innerHTML = "<strong>Set a Security Question (for the owner)</strong><br><small style='color: gray;'>Ask something only the real owner would know.</small>";
+      securityLabel.innerHTML = "<strong>Security Question (for the owner)</strong><br><small>Ask a detail only the real owner would know.</small>";
     }
   } else {
     securitySection.style.display = "none";
@@ -106,7 +72,7 @@ typeSelect.addEventListener("change", () => {
 });
 
 /* ============================= */
-/* 🔹 FORM SUBMISSION */
+/* 🔹 FORM SUBMISSION (CLOUDINARY) */
 /* ============================= */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -117,12 +83,9 @@ form.addEventListener("submit", async (e) => {
   }
 
   const user = auth.currentUser;
-  if (!user) {
-    alert("Session expired. Please log in again.");
-    return;
-  }
+  if (!user) return alert("Session expired. Please log in again.");
 
-  // Check Daily Limit
+  // 1. Daily Limit Check
   try {
     const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
     const q = query(
@@ -132,47 +95,72 @@ form.addEventListener("submit", async (e) => {
     );
 
     const snapshot = await getDocs(q);
-    
     if (snapshot.size >= DAILY_POST_LIMIT) {
-      alert(`Limit reached! You can only post ${DAILY_POST_LIMIT} items every 24 hours.`);
+      alert(`Daily limit reached! You can only post ${DAILY_POST_LIMIT} items every 24 hours.`);
       return; 
     }
   } catch (err) {
-    console.error("Security Check Error:", err);
-    alert("Security check failed. Try disabling ad-blockers and refreshing.");
-    return; 
+    console.error("Limit check error:", err);
   }
 
-  const type = typeSelect.value;
-  if (type === "Found" && imageDataArray.length === 0) {
+  const files = Array.from(imageInput.files).slice(0, 4);
+  if (typeSelect.value === "Found" && files.length === 0) {
     alert("Please upload at least one image for FOUND items.");
     return;
   }
 
-  const itemData = {
-    userId: user.uid,
-    userEmail: user.email,
-    username: user.displayName || document.getElementById("username").value || "Anonymous",
-    title: document.getElementById("title").value,
-    category: document.getElementById("category").value || "Other",
-    type: type,
-    description: document.getElementById("description").value,
-    location: document.getElementById("location").value,
-    date: document.getElementById("date").value,
-    images: imageDataArray,
-    contact: document.getElementById("contact").value || "Not provided",
-    securityQuestion: document.getElementById("securityQuestion").value || "",
-    securityAnswer: document.getElementById("securityAnswer").value || "",
-    status: "Open",
-    createdAt: Date.now()
-  };
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.innerText = "Uploading to Cloud...";
 
   try {
+    // 2. Upload Images to Cloudinary
+    const uploadedUrls = [];
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.secure_url) {
+        uploadedUrls.push(data.secure_url);
+      } else {
+        throw new Error("Cloudinary upload failed");
+      }
+    }
+
+    // 3. Prepare Final Data
+    const itemData = {
+      userId: user.uid,
+      userEmail: user.email,
+      username: user.displayName || document.getElementById("username").value || "Anonymous",
+      title: document.getElementById("title").value.trim(),
+      category: document.getElementById("category").value || "Other",
+      type: typeSelect.value,
+      description: document.getElementById("description").value.trim(),
+      location: document.getElementById("location").value.trim(),
+      date: document.getElementById("date").value,
+      images: uploadedUrls, // Cloudinary URLs
+      contact: document.getElementById("contact").value.trim() || "Not provided",
+      securityQuestion: document.getElementById("securityQuestion").value.trim() || "",
+      securityAnswer: document.getElementById("securityAnswer").value.trim() || "",
+      status: "Open",
+      createdAt: Date.now()
+    };
+
+    // 4. Save to Firestore
     await addDoc(collection(db, "items"), itemData);
     alert("Item posted successfully!");
     window.location.href = "index.html"; 
   } catch (error) {
     console.error("Error posting item:", error);
-    alert("Error posting item. Make sure your images aren't too large.");
+    alert("Failed to post. Please check your internet connection and Cloudinary settings.");
+    submitBtn.disabled = false;
+    submitBtn.innerText = "Post Item";
   }
 });

@@ -84,9 +84,6 @@ function renderItem(item, docId) {
         </button>
       </div>
 
-      <p id="contactInfo" style="display:none; margin-top: 15px; color: #2e5e2e; font-weight: bold; padding: 10px; background: #e8f5e9; border-radius: 5px;">
-        ✅ Verified Contact: ${item.contact}
-      </p>
 
       <div id="claimSection" style="display:none; margin-top: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fafafa;">
         <p><strong>Security Question:</strong> <span id="displayQuestion"></span></p>

@@ -1,26 +1,26 @@
-// Add the auth import to your existing imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"; // New import
+import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAZcB7Krb6R9SeZDl5uHJYaTjC2fuH-NM0",
     authDomain: "cbit-lost-found.firebaseapp.com",
     projectId: "cbit-lost-found",
-    storageBucket: "cbit-lost-found.firebasestorage.app",
+    // Standard Firebase storage bucket URL format
+    storageBucket: "cbit-lost-found.firebasestorage.app", 
     messagingSenderId: "881267176502",
     appId: "1:881267176502:web:25bf00cb521611d2835497"
 };
 
-// Initialize Firebase
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Services
+// Initialize Firebase Services
 const db = getFirestore(app);
 const storage = getStorage(app);
-const auth = getAuth(app); // Initialize Auth
-const provider = new GoogleAuthProvider(); // Initialize Google Provider
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-// Export
-export { db, storage, auth, provider }; // Add auth and provider to exports
+// Export services for use in other files
+export { db, storage, auth, provider };
