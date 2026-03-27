@@ -138,14 +138,15 @@ form.addEventListener("submit", async (e) => {
     const itemData = {
       userId: user.uid,
       userEmail: user.email,
-      username: user.displayName || document.getElementById("username").value || "Anonymous",
+      // 🔥 Standardized: Use Google Account name to prevent impersonation
+      username: user.displayName || "CBIT Student", 
       title: document.getElementById("title").value.trim(),
       category: document.getElementById("category").value || "Other",
       type: typeSelect.value,
       description: document.getElementById("description").value.trim(),
       location: document.getElementById("location").value.trim(),
       date: document.getElementById("date").value,
-      images: uploadedUrls, // Cloudinary URLs
+      images: uploadedUrls,
       contact: document.getElementById("contact").value.trim() || "Not provided",
       securityQuestion: document.getElementById("securityQuestion").value.trim() || "",
       securityAnswer: document.getElementById("securityAnswer").value.trim() || "",

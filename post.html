@@ -28,7 +28,7 @@
   <div class="accent-line"></div>
 
   <div id="loadingMsg" style="text-align: center; margin-top: 50px;">
-    <p>Checking authentication...</p>
+    <p><i class="fas fa-spinner fa-spin"></i> Checking authentication...</p>
   </div>
 
   <section class="form-section" id="postFormContainer" style="display: none;">
@@ -43,8 +43,10 @@
     </div>
 
     <form id="postForm">
-      <input type="text" id="title" placeholder="Item Name" required>
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Item Name</label>
+      <input type="text" id="title" placeholder="e.g., Blue Water Bottle, ID Card" required>
 
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Category</label>
       <select id="category">
         <option value="">All / Not specified</option>
         <option>Electronics</option>
@@ -54,46 +56,54 @@
         <option>Other</option>
       </select>
 
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Post Type</label>
       <select id="type" required>
-        <option value="">Type</option>
+        <option value="">Select Type</option>
         <option value="Lost">Lost</option>
         <option value="Found">Found</option>
       </select>
 
-      <textarea id="description" placeholder="Description" required></textarea>
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Detailed Description</label>
+      <textarea id="description" placeholder="Describe unique features, marks, or content..." required></textarea>
 
-      <input type="text" id="location" placeholder="Location (e.g., Library, Block A)" required>
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Location</label>
+      <input type="text" id="location" placeholder="e.g., Library 2nd Floor, Block D Canteen" required>
 
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Date & Time</label>
       <input type="datetime-local" id="date" required>
 
+      <label style="font-size: 13px; color: #555; margin-bottom: 5px; display: block;">Upload Images</label>
       <input type="file" id="images" multiple accept="image/jpeg, image/png">
 
-      <p style="font-size: 12px; color: gray; line-height: 1.4;">
-        <strong>Found items:</strong> At least one image required. <br>
+      <p style="font-size: 11px; color: gray; line-height: 1.4; margin-top: 5px;">
+        <strong>Found items:</strong> At least one image is required. <br>
         <strong>Lost items:</strong> Image is optional. <br>
-        <span style="color: #b22222; font-weight: bold;">iPhone Users: If your photo won't upload (HEIC), please take a screenshot of it and upload that instead!(make sure image type is: .png or .jpg or .jpeg)</span>
+        <span style="color: #b22222; font-weight: bold;">iPhone Users:</span> If upload fails, please use a screenshot (JPEG/PNG).
       </p>
 
       <div id="imagePreview" class="preview-container"></div>
 
-      <div id="securitySection" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px; display: none;">
-        <p style="font-size: 13px; color: #2e5e2e;"><strong>Set a Security Question (for Claimers)</strong></p>
-        <p style="font-size: 11px; color: gray; margin-bottom: 5px;">This helps verify the real owner of the item.</p>
-        <input type="text" id="securityQuestion" placeholder="e.g., What color is the keychain?">
+      <div id="securitySection" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px; display: none; background: #f9fff9; padding: 10px; border-radius: 5px;">
+        <p style="font-size: 13px; color: #2e5e2e;"><strong>Set a Security Question</strong></p>
+        <p style="font-size: 11px; color: gray; margin-bottom: 10px;">This helps verify the owner before sharing your contact info.</p>
+        <input type="text" id="securityQuestion" placeholder="e.g., What is written on the back?">
         <input type="text" id="securityAnswer" placeholder="The correct answer">
       </div>
 
-      <input type="text" id="username" placeholder="Your Name (optional)">
-      <input type="text" id="contact" placeholder="Contact (Phone / Email / Insta / Telegram)">
+      <div style="margin-top: 20px;">
+        <p style="font-size: 13px; color: #333;"><strong>Private Contact Information</strong></p>
+        <p style="font-size: 11px; color: gray; margin-bottom: 10px;">This will only be visible to users after you manually approve their claim.</p>
+        <input type="text" id="contact" placeholder="Phone / WhatsApp / Instagram Handle" required>
+      </div>
 
-      <div style="margin: 15px 0; display: flex; align-items: flex-start; gap: 10px;">
+      <div style="margin: 20px 0; display: flex; align-items: flex-start; gap: 10px;">
         <input type="checkbox" id="guidelineAgree" required style="width: auto; height: auto; margin-top: 4px;">
         <label for="guidelineAgree" style="font-size: 12px; color: #555; cursor: pointer; line-height: 1.4;">
-          I agree to post only relevant information and understand that my activity is logged to prevent misuse.
+          I agree to post only genuine CBIT campus information and understand that my activity is logged.
         </label>
       </div>
 
-      <button type="submit">Post Item</button>
+      <button type="submit" class="recover-btn" style="width: 100%;">Post Item</button>
     </form>
   </section>
 

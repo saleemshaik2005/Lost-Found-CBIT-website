@@ -65,8 +65,6 @@ function renderItem(item, docId) {
       </button>`;
   }
 
-  // 🛡️ SECURITY: item.contact is NOT rendered here at all.
-  // It is only accessible to the approved person via the Notifications tab.
   container.innerHTML = `
     <div class="details-box">
       <div class="details-images">
@@ -97,6 +95,9 @@ function renderItem(item, docId) {
         <p style="color: #2e5e2e; font-weight: bold; margin-bottom: 10px;">Verification Step</p>
         <p><strong>Question:</strong> <span id="displayQuestion"></span></p>
         <input type="text" id="claimAnswer" placeholder="Your answer here..." style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px;">
+        
+        <textarea id="claimMessage" placeholder="Optional: Add a message (e.g., 'I left this right after my lab', 'I really need this for my exam')" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; height: 80px;"></textarea>
+        
         <input type="text" id="claimerContact" placeholder="Your Phone / WhatsApp" style="width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px;">
         <button id="submitClaimBtn" class="recover-btn" style="width: 100%;" onclick="submitClaim('${docId}', '${item.userId}')">Submit & Notify Finder</button>
       </div>
@@ -133,6 +134,7 @@ function handleClaimClick(question, docId, posterId, type) {
 
 async function submitClaim(docId, posterId) {
   const answer = document.getElementById("claimAnswer").value.trim();
+  const message = document.getElementById("claimMessage").value.trim(); // 🆕 Get message
   const contact = document.getElementById("claimerContact").value.trim();
   const user = auth.currentUser;
 
@@ -156,6 +158,7 @@ async function submitClaim(docId, posterId) {
       claimerEmail: user.email,
       claimerContact: contact,
       answer: answer,
+      message: message, // 🆕 Store message in DB
       status: "Pending",
       timestamp: Date.now()
     });
@@ -165,8 +168,9 @@ async function submitClaim(docId, posterId) {
       finder_name: itemData.username,
       item_title: itemData.title,
       claim_answer: answer,
+      claim_message: message || "No additional message provided.", // 🆕 Send in email
       to_email: itemData.userEmail,
-      portal_link: "https://cbit-lost-found.web.app", // Update this after deployment
+      portal_link: "https://cbit-lost-found.web.app", 
       dev_linkedin: "https://www.linkedin.com/in/saleemshaikatcbit/"
     };
 
