@@ -138,7 +138,6 @@ form.addEventListener("submit", async (e) => {
     const itemData = {
       userId: user.uid,
       userEmail: user.email,
-      // 🔥 Standardized: Use Google Account name to prevent impersonation
       username: user.displayName || "CBIT Student", 
       title: document.getElementById("title").value.trim(),
       category: document.getElementById("category").value || "Other",
@@ -147,6 +146,7 @@ form.addEventListener("submit", async (e) => {
       location: document.getElementById("location").value.trim(),
       date: document.getElementById("date").value,
       images: uploadedUrls,
+      // Backup contact info, only used for approved private chats
       contact: document.getElementById("contact").value.trim() || "Not provided",
       securityQuestion: document.getElementById("securityQuestion").value.trim() || "",
       securityAnswer: document.getElementById("securityAnswer").value.trim() || "",
@@ -156,11 +156,11 @@ form.addEventListener("submit", async (e) => {
 
     // 4. Save to Firestore
     await addDoc(collection(db, "items"), itemData);
-    alert("Item posted successfully!");
+    alert("Item posted successfully! Check your notifications regularly for claim requests.");
     window.location.href = "index.html"; 
   } catch (error) {
     console.error("Error posting item:", error);
-    alert("Failed to post. Please check your internet connection and Cloudinary settings.");
+    alert("Failed to post. Please check your connection.");
     submitBtn.disabled = false;
     submitBtn.innerText = "Post Item";
   }

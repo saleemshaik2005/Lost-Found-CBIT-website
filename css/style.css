@@ -545,3 +545,72 @@ form button {
 }
 
 /* Keep all your existing global, header, hero, and footer styles below... */
+/* ============================= */
+/* 💬 CHAT SYSTEM STYLES */
+/* ============================= */
+
+/* Container for all messages */
+#chatMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px;
+  background: #fdfdfd;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Custom scrollbar for the chat window */
+#chatMessages::-webkit-scrollbar {
+  width: 5px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+/* Individual message bubble logic */
+.message-bubble {
+  max-width: 80%;
+  padding: 10px 15px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  position: relative;
+}
+
+/* Styling for messages YOU send */
+.message-sent {
+  align-self: flex-end;
+  background: #2e5e2e; /* Matches your theme green */
+  color: white;
+  border-radius: 15px 15px 2px 15px;
+}
+
+/* Styling for messages YOU receive */
+.message-received {
+  align-self: flex-start;
+  background: #eee;
+  color: #333;
+  border-radius: 15px 15px 15px 2px;
+}
+
+/* Input area styling */
+#messageInput {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  outline: none;
+}
+
+#sendBtn {
+  width: auto;
+  padding: 0 25px;
+  border-radius: 25px;
+  cursor: pointer;
+}

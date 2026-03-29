@@ -1,5 +1,5 @@
 import { db, auth } from "./firebase.js";
-import { collection, query, where, getDocs, doc, updateDoc, getDoc, or } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, query, where, getDocs, doc, updateDoc, getDoc, or, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const listContainer = document.getElementById("claimsList");
@@ -55,20 +55,21 @@ onAuthStateChanged(auth, async (user) => {
           
           <div style="background: #fff; border: 1px solid #eee; padding: 10px; border-radius: 8px; margin: 10px 0;">
             <p style="margin-bottom: 5px;"><strong>Security Answer:</strong> <span style="color: #b22222;">${claim.answer}</span></p>
-            
             <p style="margin-top: 10px; border-top: 1px solid #eee; pt-5px;"><strong>Message:</strong></p>
             <p style="font-style: italic; color: #555; background: #fdfdfd; padding: 8px; border-radius: 4px;">"${claim.message || "No additional message provided."}"</p>
           </div>
 
-          <p><strong>Claimer Contact:</strong> <span style="font-weight:bold;">${claim.claimerContact || "Not provided"}</span></p>
-          
-          <div id="actions-${claimId}" style="margin-top: 15px; display: flex; gap: 10px;">
+          <div id="actions-${claimId}" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
             ${(!isApproved && !isRejected) ? 
-              `<button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn" style="flex:1;">Approve</button>
-               <button onclick="rejectClaim('${claimId}')" class="recover-btn" style="background: #b22222; flex:1;">Reject</button>` : 
-              `<p style="color: ${isRejected ? 'red' : 'green'}; font-weight: bold; border: 1px solid; padding: 5px 10px; border-radius: 4px; width: 100%; text-align: center;">
-                ${isRejected ? '✘ Request Rejected' : '✔ Item Recovered'}
-              </p>`
+              `<div style="display:flex; gap:10px;">
+                <button onclick="approveClaim('${claimId}', '${claim.itemId}')" class="recover-btn" style="flex:1;">Approve & Chat</button>
+                <button onclick="rejectClaim('${claimId}')" class="recover-btn" style="background: #b22222; flex:1;">Reject</button>
+               </div>` : 
+              (isApproved ? 
+                `<button onclick="window.location.href='chat.html?id=${claim.chatId}'" class="recover-btn" style="width:100%; background:#4285F4;">
+                  <i class="fas fa-comments"></i> Open Chat Room
+                </button>` : 
+                `<p style="color: red; font-weight: bold; border: 1px solid; padding: 5px 10px; border-radius: 4px; width: 100%; text-align: center;">✘ Request Rejected</p>`)
             }
           </div>
         `;
@@ -79,13 +80,16 @@ onAuthStateChanged(auth, async (user) => {
           <p><strong>Status:</strong> <span style="font-weight:bold; color:${isApproved ? 'green' : (isRejected ? 'red' : 'orange')}">${isApproved ? 'Approved ✅' : (isRejected ? 'Rejected ❌' : 'Pending Verification ⏳')}</span></p>
           
           ${isApproved ? 
-            `<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-top:10px; border: 1px solid #c8e6c9;">
-              <p style="color: #2e5e2e; margin-bottom: 5px;"><strong>Owner Shared Contact Details:</strong></p>
-              <p><strong>Email:</strong> ${claim.finderEmail}</p>
-              <p><strong>Contact Info:</strong> ${claim.finderDetails || "Check original post"}</p>
+            `<div style="margin-top:15px; display:flex; flex-direction:column; gap:10px;">
+              <div style="background: #e8f5e9; padding: 10px; border-radius: 8px; border: 1px solid #c8e6c9; font-size:13px;">
+                <p style="color: #2e5e2e; margin:0;"><strong>Request Approved!</strong> You can now chat securely with the finder.</p>
+              </div>
+              <button onclick="window.location.href='chat.html?id=${claim.chatId}'" class="recover-btn" style="width:100%; background:#4285F4;">
+                <i class="fas fa-comments"></i> Open Chat Room
+              </button>
              </div>` : 
-            (isRejected ? `<p style="margin-top:10px; color: #b22222; background: #ffebee; padding: 10px; border-radius: 4px;">The owner declined this claim. Ensure your security answer and message are accurate before trying again.</p>` : 
-            `<p style="margin-top:10px; color: #666; font-style: italic;">The owner has been notified. They will review your answer and message shortly.</p>`)
+            (isRejected ? `<p style="margin-top:10px; color: #b22222; background: #ffebee; padding: 10px; border-radius: 4px;">The owner declined this claim.</p>` : 
+            `<p style="margin-top:10px; color: #666; font-style: italic;">The owner is reviewing your answer. You will be able to chat once approved.</p>`)
           }
         `;
       }
@@ -104,7 +108,6 @@ onAuthStateChanged(auth, async (user) => {
         }
       });
 
-      // Mark as seen logic
       if (isPoster && claim.status === "Pending") {
         updateDoc(doc(db, "claims", claimId), { status: "Seen" });
       }
@@ -118,28 +121,54 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
+/* ============================= */
+/* 🛠️ ACTIONS */
+/* ============================= */
+
 window.approveClaim = async (claimId, itemId) => {
-  if (confirm("By approving, you will share your contact details with this user. Proceed?")) {
-    const itemSnap = await getDoc(doc(db, "items", itemId));
-    const contact = itemSnap.exists() ? itemSnap.data().contact : "Not provided";
-    
-    await updateDoc(doc(db, "claims", claimId), { 
-      status: "Approved", 
-      finderEmail: auth.currentUser.email, 
-      finderDetails: contact 
-    });
-    
-    await updateDoc(doc(db, "items", itemId), { 
-      status: "Recovered", 
-      recoveredAt: Date.now() 
-    });
-    
-    location.reload();
+  if (confirm("Approve this claim? This will open a private chat room with the user.")) {
+    try {
+      const claimSnap = await getDoc(doc(db, "claims", claimId));
+      const claimData = claimSnap.data();
+      const itemSnap = await getDoc(doc(db, "items", itemId));
+      const itemTitle = itemSnap.exists() ? itemSnap.data().title : "Item Chat";
+
+      // 1. Create a unique Chat Room ID
+      const chatId = `chat_${itemId}_${claimData.claimerId}`;
+
+      // 2. Initialize the chat document in Firestore
+      await setDoc(doc(db, "chats", chatId), {
+        itemId: itemId,
+        itemTitle: itemTitle,
+        user1: auth.currentUser.uid, // Finder
+        user2: claimData.claimerId,   // Claimer
+        createdAt: Date.now(),
+        messages: []
+      });
+
+      // 3. Update the claim with the chatId
+      await updateDoc(doc(db, "claims", claimId), { 
+        status: "Approved", 
+        chatId: chatId 
+      });
+      
+      // 4. Mark item as recovered
+      await updateDoc(doc(db, "items", itemId), { 
+        status: "Recovered", 
+        recoveredAt: Date.now() 
+      });
+      
+      alert("Success! Chat room created.");
+      location.reload();
+    } catch (error) {
+      console.error("Approval error:", error);
+      alert("Error initializing chat.");
+    }
   }
 };
 
 window.rejectClaim = async (claimId) => {
-  if (confirm("Reject this request? The user will be notified of the decline.")) {
+  if (confirm("Reject this request?")) {
     await updateDoc(doc(db, "claims", claimId), { status: "Rejected" });
     location.reload();
   }

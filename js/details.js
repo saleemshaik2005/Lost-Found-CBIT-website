@@ -98,7 +98,6 @@ function renderItem(item, docId) {
         
         <textarea id="claimMessage" placeholder="Optional: Add a message (e.g., 'I left this right after my lab', 'I really need this for my exam')" style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; height: 80px;"></textarea>
         
-        <input type="text" id="claimerContact" placeholder="Your Phone / WhatsApp" style="width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ccc; border-radius: 4px;">
         <button id="submitClaimBtn" class="recover-btn" style="width: 100%;" onclick="submitClaim('${docId}', '${item.userId}')">Submit & Notify Finder</button>
       </div>
 
@@ -117,7 +116,7 @@ function renderItem(item, docId) {
 function handleClaimClick(question, docId, posterId, type) {
   const user = auth.currentUser;
   if (!user) {
-    alert("You must be logged in to claim items.");
+    alert("Please log in to claim items.");
     return;
   }
   
@@ -134,11 +133,10 @@ function handleClaimClick(question, docId, posterId, type) {
 
 async function submitClaim(docId, posterId) {
   const answer = document.getElementById("claimAnswer").value.trim();
-  const message = document.getElementById("claimMessage").value.trim(); // 🆕 Get message
-  const contact = document.getElementById("claimerContact").value.trim();
+  const message = document.getElementById("claimMessage").value.trim();
   const user = auth.currentUser;
 
-  if (!answer || !contact) return alert("Please provide both an answer and your contact info.");
+  if (!answer) return alert("Please provide an answer to the security question.");
 
   const btn = document.getElementById("submitClaimBtn");
   btn.disabled = true;
@@ -149,16 +147,15 @@ async function submitClaim(docId, posterId) {
     const itemSnap = await getDoc(doc(db, "items", docId));
     const itemData = itemSnap.data();
 
-    // 2. Save Claim to Firestore
+    // 2. Save Claim to Firestore without phone number
     await addDoc(collection(db, "claims"), {
       itemId: docId,
       finderId: posterId,
       claimerId: user.uid,
       claimerName: user.displayName || "CBIT User",
       claimerEmail: user.email,
-      claimerContact: contact,
       answer: answer,
-      message: message, // 🆕 Store message in DB
+      message: message,
       status: "Pending",
       timestamp: Date.now()
     });
@@ -168,7 +165,7 @@ async function submitClaim(docId, posterId) {
       finder_name: itemData.username,
       item_title: itemData.title,
       claim_answer: answer,
-      claim_message: message || "No additional message provided.", // 🆕 Send in email
+      claim_message: message || "No additional message provided.",
       to_email: itemData.userEmail,
       portal_link: "https://cbit-lost-found.web.app", 
       dev_linkedin: "https://www.linkedin.com/in/saleemshaikatcbit/"
@@ -176,7 +173,7 @@ async function submitClaim(docId, posterId) {
 
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
 
-    alert("Your claim request has been sent! The finder has been notified via email.");
+    alert("Your claim request has been sent! You will be able to chat with the finder once they approve your request.");
     location.reload();
   } catch (error) {
     console.error("Error submitting claim:", error);
